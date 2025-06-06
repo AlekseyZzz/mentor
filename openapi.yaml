@@ -1,0 +1,379 @@
+openapi: 3.0.0
+info:
+  title: Poker Mentor API
+  version: 1.0.0
+  description: API for poker training application with post-session reflection features
+
+servers:
+  - url: /api
+    description: Base API path
+
+components:
+  schemas:
+    PostSessionReflection:
+      type: object
+      required:
+        - minutes_played
+        - energy_level
+        - mental_profiles
+        - pre_session_done
+        - had_strong_emotions
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        user_id:
+          type: string
+          format: uuid
+          readOnly: true
+        minutes_played:
+          type: integer
+          minimum: 1
+        tables_played:
+          type: integer
+          minimum: 1
+        energy_level:
+          type: string
+        dominant_profile:
+          type: string
+          enum: [a, b, c, d]
+        mental_profiles:
+          type: array
+          items:
+            type: string
+            enum: [a, b, c, d]
+        pre_session_done:
+          type: boolean
+          default: false
+        skip_reason:
+          type: string
+        pre_session_feeling:
+          type: string
+        had_strong_emotions:
+          type: boolean
+        emotion:
+          type: string
+        emotion_trigger:
+          type: string
+        emotion_thoughts:
+          type: string
+        valid_reaction:
+          type: string
+        exaggerated_reaction:
+          type: string
+        future_response:
+          type: string
+        reset_checklist:
+          type: object
+          properties:
+            breathingDone:
+              type: boolean
+            visualizationDone:
+              type: boolean
+            selfWorthReminder:
+              type: boolean
+        reset_message:
+          type: string
+        rescue_attempted:
+          type: boolean
+        rescue_strategy:
+          type: string
+        c_game_moment_note:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+
+    MentalGameNote:
+      type: object
+      required:
+        - note_text
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        user_id:
+          type: string
+          format: uuid
+          readOnly: true
+        session_id:
+          type: string
+          format: uuid
+        note_text:
+          type: string
+          maxLength: 250
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+
+    HandAnalysis:
+      type: object
+      required:
+        - hand_description
+        - initial_thought
+        - adaptive_thought
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        user_id:
+          type: string
+          format: uuid
+          readOnly: true
+        session_id:
+          type: string
+          format: uuid
+        screenshot_url:
+          type: string
+          format: uri
+        hand_description:
+          type: string
+        initial_thought:
+          type: string
+        adaptive_thought:
+          type: string
+        spot_type:
+          type: string
+        position_dynamic:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        priority_level:
+          type: string
+          enum: [high, medium, low]
+        theory_attachments:
+          type: array
+          items:
+            type: object
+            properties:
+              url:
+                type: string
+                format: uri
+              caption:
+                type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+
+    MentalGameTrait:
+      type: object
+      required:
+        - profile_type
+        - trait_text
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        user_id:
+          type: string
+          format: uuid
+          readOnly: true
+        profile_type:
+          type: string
+          enum: [a, b, c, d]
+        trait_text:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+paths:
+  /post-sessions/latest:
+    get:
+      summary: Get user's latest post-session reflection
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Latest post-session reflection with related data
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PostSessionReflection'
+                  - type: object
+                    properties:
+                      mental_game_notes:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MentalGameNote'
+                      hand_analysis:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/HandAnalysis'
+                      mental_game_traits:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MentalGameTrait'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /post-sessions:
+    post:
+      summary: Create a new post-session reflection
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reflection:
+                  $ref: '#/components/schemas/PostSessionReflection'
+                mental_game_notes:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/MentalGameNote'
+                hand_analysis:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/HandAnalysis'
+                mental_game_traits:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/MentalGameTrait'
+      responses:
+        '201':
+          description: Post-session reflection created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostSessionReflection'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /post-sessions/history:
+    get:
+      summary: Get user's post-session reflection history
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: List of post-session reflections
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PostSessionReflection'
+                  total:
+                    type: integer
+                  has_more:
+                    type: boolean
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /post-sessions/{id}:
+    get:
+      summary: Get a specific post-session reflection by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Post-session reflection with related data
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PostSessionReflection'
+                  - type: object
+                    properties:
+                      mental_game_notes:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MentalGameNote'
+                      hand_analysis:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/HandAnalysis'
+                      mental_game_traits:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MentalGameTrait'
+        '404':
+          description: Post-session reflection not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

@@ -1,0 +1,37 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "add": "Add",
+    "remove": "Remove",
+    "loading": "Loading..."
+  },
+  "header": {
+    "dashboard": "Dashboard",
+    "preSession": "Pre-Session Protocol",
+    "postSession": "Post-Session Reflection",
+    "progress": "Progress Tracker",
+    "analysis": "Image Analysis",
+    "knowledge": "Knowledge Base",
+    "settings": "Settings",
+    "search": "Search for concepts, hands, or notes..."
+  },
+  "mentalGame": {
+    "aGame": {
+      "label": "A-Game",
+      "description": "Focused, confident, present, strong decision-making"
+    },
+    "bGame": {
+      "label": "B-Game",
+      "description": "Decent focus, some mistakes or autopilot moments"
+    },
+    "cGame": {
+      "label": "C-Game",
+      "description": "Emotionally reactive, distracted, unsure"
+    },
+    "dGame": {
+      "label": "D-Game",
+      "description": "Tilt, frustration, mentally checked out"
+    }
+  }
+}
