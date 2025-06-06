@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Poker Mentor</title>
+    <script src="/js/app.js"></script>
+</head>
+<body>
+<h1>Post Session Reflections</h1>
+<ul id="list">
+    <li th:each="r : ${reflections}">
+        Minutes played: <span th:text="${r.minutesPlayed}"></span>
+    </li>
+</ul>
+</body>
+</html>
