@@ -1,0 +1,26 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: mentor
+      POSTGRES_USER: mentor
+      POSTGRES_PASSWORD: mentor
+    ports:
+      - "5432:5432"
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    depends_on:
+      - db
+    ports:
+      - "8080:8080"
+  webui:
+    build:
+      context: .
+      dockerfile: webui/Dockerfile
+    depends_on:
+      - backend
+    ports:
+      - "8081:8081"
