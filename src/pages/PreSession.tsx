@@ -1,34 +1,71 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { CheckCircle, Brain, Coffee, Battery, Moon, Activity, Target, CreditCard as Edit2, X, Dumbbell, AlertCircle, Clock } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import TrainingCard from '../components/training/TrainingCard';
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { AlertCircle, CheckCircle2, X, Target, Shield, Activity } from 'lucide-react';
 import AGameReadinessCheck from '../components/session/AGameReadinessCheck';
 import { usePreSession } from '../hooks/usePreSession';
 import { PreSessionProtocol } from '../lib/api/preSession';
 
-const PreSession: React.FC = () => {
-  const [globalGoal, setGlobalGoal] = useState('');
-  const [globalGoalReason, setGlobalGoalReason] = useState('');
-  const [skipGoal, setSkipGoal] = useState(false);
-  const [primaryFocus, setPrimaryFocus] = useState('');
-  const [lastSessionFocus] = useState('Leaking too many river calls OOP in 3BP');
-  const [mentalState, setMentalState] = useState(3);
-  const [energyLevel, setEnergyLevel] = useState(3);
-  const [sleepQuality, setSleepQuality] = useState(3);
-  const [emotionalState, setEmotionalState] = useState('');
-  const [aGameFeeling, setAGameFeeling] = useState('');
-  const [mentalAnchor, setMentalAnchor] = useState('');
-  const [tiltTriggers, setTiltTriggers] = useState('');
-  const [tiltPlan, setTiltPlan] = useState('');
-  const [gameType, setGameType] = useState('cash');
-  const [stakes, setStakes] = useState('');
-  const [sessionLength, setSessionLength] = useState('');
+const FOCUS_THEMES = [
+  '3BP OOP: reduce river overcalls',
+  'BB vs CO steal: widen defend with BDFD/BDSD',
+  'Turn barreling only with equity or clean blockers',
+  'Thin value river IP vs missed c-bet',
+  'Reduce open-folding BTN vs 3BP from blinds',
+  'Custom...'
+];
 
-  const [meditationTime, setMeditationTime] = useState<'3' | '5' | '10' | 'none'>('none');
-  const [isReadyForAGame, setIsReadyForAGame] = useState(false);
-  const [showMeditationSuggestion, setShowMeditationSuggestion] = useState(false);
-  const [isPhysicallyReady, setIsPhysicallyReady] = useState(false);
+const FOCUS_KPIS = [
+  '≤ 1 marginal calls',
+  '≤ 2 marginal calls',
+  '≥ 3 collected screenshots of target spot',
+  '≥ 5 collected screenshots of target spot',
+  'Adherence ≥ 80% to pre-written plan',
+  'Adherence ≥ 90% to pre-written plan'
+];
+
+const ANCHOR_PHRASES = [
+  'Plan over emotion',
+  'Slow on turn/river',
+  '2-street planning before act',
+  'Equity before ego',
+  'Think, then click'
+];
+
+const TILT_TRIGGERS = [
+  'Heat in face',
+  'Revenge desire',
+  'Rushing clicks',
+  'Body tension',
+  'Shallow breathing',
+  'Anger at opponent'
+];
+
+const RESET_SCRIPTS = [
+  'Stand up–90s breathing–water–return',
+  'Close tables to 1–5 min pause–journal one line',
+  'Hard stop (end block)',
+  '3 deep breaths–shake hands–continue'
+];
+
+const OVERRIDE_REASONS = [
+  'time-boxed test',
+  'stake drop',
+  'table select only',
+  'short recreational session'
+];
+
+const PreSession: React.FC = () => {
+  const navigate = useNavigate();
+  const { submit, loading, error } = usePreSession();
+
+  const [gameType, setGameType] = useState<'cash' | 'tournament'>('cash');
+  const [stakes, setStakes] = useState('');
+  const [tablesMax, setTablesMax] = useState(4);
+  const [plannedMinutes, setPlannedMinutes] = useState(120);
+  const [maxMinutes, setMaxMinutes] = useState<number | undefined>(undefined);
+  const [blockPlayMin, setBlockPlayMin] = useState(50);
+  const [blockBreakMin, setBlockBreakMin] = useState(10);
+  const [customBlock, setCustomBlock] = useState(false);
 
   const [readinessSleep, setReadinessSleep] = useState(0);
   const [readinessEnergy, setReadinessEnergy] = useState(0);
@@ -42,53 +79,84 @@ const PreSession: React.FC = () => {
   });
   const [skipReadinessCheck, setSkipReadinessCheck] = useState(false);
 
-  const navigate = useNavigate();
-  const { submit, loading, error } = usePreSession();
+  const [stopLossBi, setStopLossBi] = useState(3);
+  const [stopWinBi, setStopWinBi] = useState(0);
+
+  const [focusTheme, setFocusTheme] = useState('');
+  const [customFocusTheme, setCustomFocusTheme] = useState('');
+  const [focusKpi, setFocusKpi] = useState('');
+  const [collectScreenshots, setCollectScreenshots] = useState(false);
+
+  const [selectedAnchors, setSelectedAnchors] = useState<string[]>([]);
+  const [selectedTriggers, setSelectedTriggers] = useState<string[]>([]);
+  const [resetScript, setResetScript] = useState('');
+
+  const [lastSessionQuality, setLastSessionQuality] = useState<'A' | 'B' | 'C' | ''>('');
+  const [weeklyGoalOk, setWeeklyGoalOk] = useState(true);
+  const [showGoalModal, setShowGoalModal] = useState(false);
+  const [weeklyGoalText, setWeeklyGoalText] = useState('');
+
+  const [showStopModal, setShowStopModal] = useState(false);
+  const [overrideReason, setOverrideReason] = useState('');
+
+  const calculateScore = () => {
+    if (skipReadinessCheck) return { score: null, zone: null };
+
+    if (readinessSleep === 0 || readinessEnergy === 0 || readinessClarity === 0 || readinessEmotions === 0) {
+      return { score: null, zone: null };
+    }
+
+    const physScore =
+      (readinessPhysicalPrep.water ? 2.5 : 0) +
+      (readinessPhysicalPrep.food ? 2.5 : 0) +
+      (readinessPhysicalPrep.stretch ? 2.5 : 0) +
+      (readinessPhysicalPrep.caffeine ? 2.5 : 0);
+
+    const raw = (readinessSleep + readinessEnergy + readinessClarity + readinessEmotions + physScore) / 5;
+    const score = Math.round(raw * 10);
+
+    let zone: 'GO' | 'CAUTION' | 'STOP';
+    if (score >= 70) zone = 'GO';
+    else if (score >= 50) zone = 'CAUTION';
+    else zone = 'STOP';
+
+    return { score, zone, physScore };
+  };
+
+  const { score, zone, physScore } = calculateScore();
+
+  const isFormValid = () => {
+    if (!stakes) return false;
+    if (!focusTheme || (focusTheme === 'Custom...' && !customFocusTheme)) return false;
+    if (!focusKpi) return false;
+    if (!resetScript) return false;
+    if (!skipReadinessCheck && (readinessSleep === 0 || readinessEnergy === 0 || readinessClarity === 0 || readinessEmotions === 0)) return false;
+    return true;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!isFormValid()) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    if (zone === 'STOP' && !showStopModal) {
+      setShowStopModal(true);
+      return;
+    }
+
     try {
-      const physicalPrepScore =
-        (readinessPhysicalPrep.water ? 2.5 : 0) +
-        (readinessPhysicalPrep.food ? 2.5 : 0) +
-        (readinessPhysicalPrep.stretch ? 2.5 : 0) +
-        (readinessPhysicalPrep.caffeine ? 2.5 : 0);
-
-      let aGameScore = null;
-      let readinessZone = null;
-
-      if (!skipReadinessCheck && readinessSleep > 0 && readinessEnergy > 0 && readinessClarity > 0 && readinessEmotions > 0) {
-        aGameScore = Math.round(
-          ((readinessSleep + readinessEnergy + readinessClarity + readinessEmotions + physicalPrepScore) / 5) * 10
-        );
-
-        if (aGameScore >= 70) {
-          readinessZone = 'GO';
-        } else if (aGameScore >= 50) {
-          readinessZone = 'CAUTION';
-        } else {
-          readinessZone = 'STOP';
-        }
-      }
-
       const protocolData: PreSessionProtocol = {
-        long_term_goal: globalGoal,
-        goal_meaning: globalGoalReason,
-        primary_focus_area: lastSessionFocus,
-        session_focus: primaryFocus,
-        meditation_duration: meditationTime === 'none' ? null : parseInt(meditationTime),
-        mental_state_score: mentalState,
-        energy_level_score: parseInt(energyLevel),
-        sleep_quality: sleepQuality,
-        emotional_state: emotionalState,
-        a_game_description: aGameFeeling,
-        mental_anchor: mentalAnchor,
-        tilt_triggers: tiltTriggers,
-        tilt_response: tiltPlan,
         game_type: gameType,
         stakes_or_buyin: stakes,
-        planned_duration: sessionLength,
+        tables_max: tablesMax,
+        planned_duration: `${plannedMinutes} min`,
+        max_minutes: maxMinutes,
+        block_play_min: blockPlayMin,
+        block_break_min: blockBreakMin,
+
         sleep_quality_score: readinessSleep,
         energy_level_readiness: readinessEnergy,
         mental_clarity: readinessClarity,
@@ -97,9 +165,28 @@ const PreSession: React.FC = () => {
         physical_prep_food: readinessPhysicalPrep.food,
         physical_prep_stretch: readinessPhysicalPrep.stretch,
         physical_prep_caffeine: readinessPhysicalPrep.caffeine,
-        a_game_score: aGameScore,
-        readiness_zone: readinessZone,
-        skip_readiness_check: skipReadinessCheck
+        phys_score: physScore || 0,
+        a_game_score: score,
+        readiness_zone: zone,
+        skip_readiness_check: skipReadinessCheck,
+
+        stop_loss_bi: stopLossBi,
+        stop_win_bi: stopWinBi,
+
+        focus_theme: focusTheme === 'Custom...' ? customFocusTheme : focusTheme,
+        focus_kpi: focusKpi,
+        collect_screenshots: collectScreenshots,
+
+        anchor_phrases: selectedAnchors,
+        tilt_triggers: selectedTriggers,
+        reset_script: resetScript,
+
+        last_session_quality: lastSessionQuality || undefined,
+        weekly_goal_ok: weeklyGoalOk,
+        weekly_goal_text: weeklyGoalText || undefined,
+
+        override_stop: zone === 'STOP',
+        override_reason: zone === 'STOP' ? overrideReason : undefined
       };
 
       await submit(protocolData);
@@ -109,447 +196,169 @@ const PreSession: React.FC = () => {
     }
   };
 
+  const handleAnchorToggle = (phrase: string) => {
+    setSelectedAnchors(prev => {
+      if (prev.includes(phrase)) return prev.filter(p => p !== phrase);
+      if (prev.length >= 2) return prev;
+      return [...prev, phrase];
+    });
+  };
+
+  const handleTriggerToggle = (trigger: string) => {
+    setSelectedTriggers(prev => {
+      if (prev.includes(trigger)) return prev.filter(t => t !== trigger);
+      if (prev.length >= 2) return prev;
+      return [...prev, trigger];
+    });
+  };
+
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-5xl mx-auto space-y-6">
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-700 text-sm">{error.message}</p>
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-700">{error.message}</p>
         </div>
       )}
 
       <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
-        <div className="mb-6 bg-blue-50 rounded-lg p-4">
-          <p className="text-blue-800 text-sm">
-            🔍 Before you begin: Make sure you have water nearby, use the bathroom if needed, and remove any potential distractions from your environment.
-          </p>
-        </div>
-
         <div className="mb-6">
-          <h2 className="text-xl font-semibold mb-2">Pre-Session Protocol</h2>
-          <p className="text-gray-600">
-            Set your intentions and assess your current state before playing. This helps establish the right mindset and provides valuable context for post-session analysis.
-          </p>
+          <h2 className="text-2xl font-bold text-gray-900">Pre-Session Protocol</h2>
+          <p className="text-gray-600 mt-1">Set your readiness, guardrails, and focus in 30–60 seconds</p>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="mb-8 bg-blue-50 rounded-lg p-6">
-            <h3 className="text-lg font-medium text-blue-800 mb-4">Global Goal Check-In</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-blue-700 mb-1">
-                  What is your current long-term goal in poker?
-                </label>
-                <input
-                  type="text"
-                  value={globalGoal}
-                  onChange={(e) => setGlobalGoal(e.target.value)}
-                  disabled={skipGoal}
-                  className={`mt-1 block w-full rounded-md shadow-sm p-2 border ${
-                    skipGoal 
-                      ? 'bg-gray-100 border-gray-300 text-gray-500' 
-                      : 'border-blue-300 focus:border-blue-500 focus:ring focus:ring-blue-200'
-                  }`}
-                  placeholder="e.g., Build a consistent $5K/month grind, Reach NL500 and stay there"
-                  required={!skipGoal}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-blue-700 mb-1">
-                  Why is this important to you?
-                </label>
-                <textarea
-                  value={globalGoalReason}
-                  onChange={(e) => setGlobalGoalReason(e.target.value)}
-                  disabled={skipGoal}
-                  className={`mt-1 block w-full rounded-md shadow-sm p-2 border ${
-                    skipGoal 
-                      ? 'bg-gray-100 border-gray-300 text-gray-500' 
-                      : 'border-blue-300 focus:border-blue-500 focus:ring focus:ring-blue-200'
-                  }`}
-                  rows={2}
-                  placeholder="What does this goal mean for your life, and why does it matter?"
-                  required={!skipGoal}
-                />
-              </div>
-
-              <div className="mt-2">
-                <label className="inline-flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={skipGoal}
-                    onChange={(e) => setSkipGoal(e.target.checked)}
-                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <span className="ml-2 text-sm text-blue-700">
-                    I'm unsure right now / I want to skip this step today
-                  </span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <div className="mb-8 bg-gray-50 rounded-lg p-6">
-            <h3 className="text-lg font-medium mb-4">Today's Primary Focus</h3>
-            
-            <div className="mb-4">
-              <div className="flex items-center text-sm text-gray-600 mb-2">
-                <Edit2 size={16} className="mr-2 text-blue-600" />
-                Last session's focus area:
-              </div>
-              <div className="bg-white p-3 rounded-md border border-gray-200">
-                {lastSessionFocus}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                What will you focus on today?
-              </label>
-              <textarea
-                value={primaryFocus}
-                onChange={(e) => setPrimaryFocus(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 p-2 border"
-                rows={2}
-                placeholder="What specific aspect of your game will you work on?"
-              />
-            </div>
-
-            <div className="mt-4">
-              <Link
-                to="/training"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <Dumbbell size={16} className="mr-2" />
-                Train this Spot
-              </Link>
-            </div>
-          </div>
-
-          <div className="mb-8 bg-gray-50 rounded-lg p-6">
-            <h3 className="text-lg font-medium mb-4 flex items-center">
-              <Clock size={20} className="mr-2 text-blue-600" />
-              Pre-Game Meditation
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Session Basics */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="text-lg font-semibold mb-4 flex items-center text-gray-900">
+              <Target className="mr-2 text-blue-600" size={20} />
+              Session Basics
             </h3>
-            
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600">
-                Did you complete a pre-game meditation or visualization?
-              </p>
-              
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setMeditationTime('3')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium ${
-                    meditationTime === '3'
-                      ? 'bg-blue-100 text-blue-800 ring-2 ring-blue-500'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  Yes - 3 minutes
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMeditationTime('5')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium ${
-                    meditationTime === '5'
-                      ? 'bg-blue-100 text-blue-800 ring-2 ring-blue-500'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  Yes - 5 minutes
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMeditationTime('10')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium ${
-                    meditationTime === '10'
-                      ? 'bg-blue-100 text-blue-800 ring-2 ring-blue-500'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  Yes - 10 minutes
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMeditationTime('none')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium ${
-                    meditationTime === 'none'
-                      ? 'bg-gray-200 text-gray-800'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  Not today
-                </button>
-              </div>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                <Brain size={16} className="mr-2 text-blue-600" />
-                Mental State
-              </label>
-              <div className="flex items-center">
-                <span className="text-sm text-gray-500 mr-2">Distracted</span>
-                <input
-                  type="range"
-                  min={1}
-                  max={5}
-                  value={mentalState}
-                  onChange={(e) => setMentalState(Number(e.target.value))}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                />
-                <span className="text-sm text-gray-500 ml-2">Focused</span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                <Battery size={16} className="mr-2 text-blue-600" />
-                Energy Level
-              </label>
-              <div className="flex items-center">
-                <span className="text-sm text-gray-500 mr-2">Low</span>
-                <input
-                  type="range"
-                  min={1}
-                  max={5}
-                  value={energyLevel}
-                  onChange={(e) => setEnergyLevel(Number(e.target.value))}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                />
-                <span className="text-sm text-gray-500 ml-2">High</span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                <Moon size={16} className="mr-2 text-blue-600" />
-                Sleep Quality
-              </label>
-              <div className="flex items-center">
-                <span className="text-sm text-gray-500 mr-2">Poor</span>
-                <input
-                  type="range"
-                  min={1}
-                  max={5}
-                  value={sleepQuality}
-                  onChange={(e) => setSleepQuality(Number(e.target.value))}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                />
-                <span className="text-sm text-gray-500 ml-2">Excellent</span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                <Brain size={16} className="mr-2 text-blue-600" />
-                Emotional State
-              </label>
-              <input
-                type="text"
-                value={emotionalState}
-                onChange={(e) => setEmotionalState(e.target.value)}
-                placeholder="Describe in 1-2 words"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 p-2 border"
-              />
-            </div>
-          </div>
-
-          <div className="mb-8">
-            <h3 className="text-lg font-medium mb-4 flex items-center">
-              <Brain size={20} className="mr-2 text-blue-600" />
-              A-Game Activation
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  How does your A-Game feel like?
-                </label>
-                <textarea
-                  value={aGameFeeling}
-                  onChange={(e) => setAGameFeeling(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 p-2 border"
-                  rows={2}
-                  placeholder="Describe the feeling when you're playing your best"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mental Anchor Phrase
-                </label>
-                <textarea
-                  value={mentalAnchor}
-                  onChange={(e) => setMentalAnchor(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 p-2 border"
-                  rows={2}
-                  placeholder="e.g., Calm is my edge, One hand at a time"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="mb-8">
-            <h3 className="text-lg font-medium mb-4 flex items-center">
-              <AlertCircle size={20} className="mr-2 text-blue-600" />
-              Tilt Anticipation & Reset Plan
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  What situations might tilt or distract you today?
-                </label>
-                <textarea
-                  value={tiltTriggers}
-                  onChange={(e) => setTiltTriggers(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 p-2 border"
-                  rows={2}
-                  placeholder="List potential triggers or challenging situations"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  What will you do if it happens?
-                </label>
-                <textarea
-                  value={tiltPlan}
-                  onChange={(e) => setTiltPlan(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 p-2 border"
-                  rows={2}
-                  placeholder="e.g., Breathe. Pause. Don't react."
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="mb-8">
-            <h3 className="text-lg font-medium mb-4 flex items-center">
-              <Activity size={20} className="mr-2 text-blue-600" />
-              Session Logistics
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Game Type
-                </label>
-                <div className="flex space-x-4">
-                  <label className="inline-flex items-center">
-                    <input 
-                      type="radio" 
-                      name="gameType" 
-                      value="cash" 
-                      checked={gameType === 'cash'} 
-                      onChange={() => setGameType('cash')}
-                      className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                <label className="block text-sm font-medium text-gray-700 mb-2">Game Type</label>
+                <div className="flex gap-3">
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      value="cash"
+                      checked={gameType === 'cash'}
+                      onChange={(e) => setGameType(e.target.value as 'cash')}
+                      className="mr-2"
                     />
-                    <span className="ml-2 text-sm text-gray-700">Cash Game</span>
+                    <span>Cash</span>
                   </label>
-                  <label className="inline-flex items-center">
-                    <input 
-                      type="radio" 
-                      name="gameType" 
-                      value="tournament" 
-                      checked={gameType === 'tournament'} 
-                      onChange={() => setGameType('tournament')}
-                      className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      value="tournament"
+                      checked={gameType === 'tournament'}
+                      onChange={(e) => setGameType(e.target.value as 'tournament')}
+                      className="mr-2"
                     />
-                    <span className="ml-2 text-sm text-gray-700">Tournament</span>
+                    <span>Tournament</span>
                   </label>
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Stakes / Buy-in
+                  Stakes/Buy-in <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={stakes}
                   onChange={(e) => setStakes(e.target.value)}
-                  placeholder="e.g., $1/$2 or $200 MTT"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 p-2 border"
+                  placeholder="e.g., NL50 / $0.25-0.50"
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Planned Session Length
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Max Tables</label>
                 <input
-                  type="text"
-                  value={sessionLength}
-                  onChange={(e) => setSessionLength(e.target.value)}
-                  placeholder="e.g., 3 hours"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 p-2 border"
+                  type="number"
+                  min="1"
+                  max="12"
+                  value={tablesMax}
+                  onChange={(e) => setTablesMax(Number(e.target.value))}
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Planned Duration (min)</label>
+                <input
+                  type="number"
+                  min="15"
+                  max="600"
+                  value={plannedMinutes}
+                  onChange={(e) => setPlannedMinutes(Number(e.target.value))}
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Max Duration (min, optional)</label>
+                <input
+                  type="number"
+                  min="15"
+                  max="600"
+                  value={maxMinutes || ''}
+                  onChange={(e) => setMaxMinutes(e.target.value ? Number(e.target.value) : undefined)}
+                  placeholder="Hard stop limit"
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                />
+                {maxMinutes && maxMinutes < plannedMinutes && (
+                  <p className="text-xs text-orange-600 mt-1">Max overrides planned duration</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Block/Break</label>
+                {!customBlock ? (
+                  <select
+                    value={`${blockPlayMin}/${blockBreakMin}`}
+                    onChange={(e) => {
+                      if (e.target.value === 'custom') {
+                        setCustomBlock(true);
+                      } else {
+                        const [play, breakTime] = e.target.value.split('/').map(Number);
+                        setBlockPlayMin(play);
+                        setBlockBreakMin(breakTime);
+                      }
+                    }}
+                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                  >
+                    <option value="50/10">50/10 (default)</option>
+                    <option value="75/15">75/15</option>
+                    <option value="custom">Custom...</option>
+                  </select>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min="25"
+                      value={blockPlayMin}
+                      onChange={(e) => setBlockPlayMin(Number(e.target.value))}
+                      placeholder="Play"
+                      className="w-1/2 p-2 border border-gray-300 rounded-md text-sm"
+                    />
+                    <input
+                      type="number"
+                      min="5"
+                      value={blockBreakMin}
+                      onChange={(e) => setBlockBreakMin(Number(e.target.value))}
+                      placeholder="Break"
+                      className="w-1/2 p-2 border border-gray-300 rounded-md text-sm"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          <div className="mb-6 bg-gray-50 rounded-lg p-6">
-            <h3 className="text-lg font-medium mb-4 flex items-center">
-              <Brain size={20} className="mr-2 text-blue-600" />
-              A-Game Readiness Check
-            </h3>
-            
-            <div className="space-y-4">
-              <label className="flex items-center space-x-3">
-                <input
-                  type="checkbox"
-                  checked={isReadyForAGame}
-                  onChange={(e) => {
-                    setIsReadyForAGame(e.target.checked);
-                    setShowMeditationSuggestion(!e.target.checked);
-                  }}
-                  className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <span className="text-gray-700 font-medium">
-                  Yes, I'm ready to play my A-Game
-                </span>
-              </label>
-
-              <label className="flex items-center space-x-3">
-                <input
-                  type="checkbox"
-                  checked={isPhysicallyReady}
-                  onChange={(e) => setIsPhysicallyReady(e.target.checked)}
-                  className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <span className="text-gray-700 font-medium">
-                  I've had some water, finished bathroom stuff, and removed distractions.
-                </span>
-              </label>
-
-              {showMeditationSuggestion && (
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="text-blue-800 text-sm">
-                    Take a moment to re-read your global goal and reconnect with your purpose.
-                    If something is holding you back, consider another quick round of meditation or breathing.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMeditationTime('5');
-                      setShowMeditationSuggestion(false);
-                    }}
-                    className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700"
-                  >
-                    Repeat Meditation
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
+          {/* A-Game Readiness */}
           <AGameReadinessCheck
             sleepQuality={readinessSleep}
             energyLevel={readinessEnergy}
@@ -565,18 +374,258 @@ const PreSession: React.FC = () => {
             onSkipCheckChange={setSkipReadinessCheck}
           />
 
-          <div className="flex justify-between">
+          {/* Guardrails */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="text-lg font-semibold mb-4 flex items-center text-gray-900">
+              <Shield className="mr-2 text-red-600" size={20} />
+              Guardrails
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Stop-Loss (buy-ins) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="10"
+                  value={stopLossBi}
+                  onChange={(e) => setStopLossBi(Number(e.target.value))}
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                />
+                {stopLossBi === 0 && (
+                  <p className="text-xs text-orange-600 mt-1">Recommended: ≥2 buy-ins</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Stop-Win (buy-ins, 0 = off)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="10"
+                  value={stopWinBi}
+                  onChange={(e) => setStopWinBi(Number(e.target.value))}
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Focus Experiment */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="text-lg font-semibold mb-4 flex items-center text-gray-900">
+              <Activity className="mr-2 text-green-600" size={20} />
+              Focus Experiment (One Per Session)
+            </h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Theme <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={focusTheme}
+                  onChange={(e) => setFocusTheme(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                >
+                  <option value="">Select focus theme...</option>
+                  {FOCUS_THEMES.map(theme => (
+                    <option key={theme} value={theme}>{theme}</option>
+                  ))}
+                </select>
+              </div>
+
+              {focusTheme === 'Custom...' && (
+                <div>
+                  <input
+                    type="text"
+                    value={customFocusTheme}
+                    onChange={(e) => setCustomFocusTheme(e.target.value)}
+                    placeholder="Describe your focus (max 80 chars)"
+                    maxLength={80}
+                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  KPI <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={focusKpi}
+                  onChange={(e) => setFocusKpi(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                >
+                  <option value="">Select KPI...</option>
+                  {FOCUS_KPIS.map(kpi => (
+                    <option key={kpi} value={kpi}>{kpi}</option>
+                  ))}
+                </select>
+              </div>
+
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={collectScreenshots}
+                  onChange={(e) => setCollectScreenshots(e.target.checked)}
+                  className="mr-2 h-4 w-4 text-blue-600 border-gray-300 rounded"
+                />
+                <span className="text-sm font-medium text-gray-700">Collect screenshots during session</span>
+              </label>
+            </div>
+          </div>
+
+          {/* A-Game Activation */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="text-lg font-semibold mb-3 text-gray-900">A-Game Activation</h3>
+            <p className="text-sm text-gray-600 mb-3">Select up to 2 anchor phrases</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {ANCHOR_PHRASES.map(phrase => (
+                <label
+                  key={phrase}
+                  className={`flex items-center p-2 border rounded-md cursor-pointer transition-colors ${
+                    selectedAnchors.includes(phrase)
+                      ? 'bg-blue-100 border-blue-300'
+                      : 'bg-white border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedAnchors.includes(phrase)}
+                    onChange={() => handleAnchorToggle(phrase)}
+                    disabled={!selectedAnchors.includes(phrase) && selectedAnchors.length >= 2}
+                    className="mr-2 h-4 w-4"
+                  />
+                  <span className="text-sm">{phrase}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Tilt Management */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="text-lg font-semibold mb-3 text-gray-900">Tilt Management</h3>
+
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-600 mb-2">Early warning triggers (select up to 2)</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {TILT_TRIGGERS.map(trigger => (
+                    <label
+                      key={trigger}
+                      className={`flex items-center p-2 border rounded-md cursor-pointer transition-colors ${
+                        selectedTriggers.includes(trigger)
+                          ? 'bg-orange-100 border-orange-300'
+                          : 'bg-white border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedTriggers.includes(trigger)}
+                        onChange={() => handleTriggerToggle(trigger)}
+                        disabled={!selectedTriggers.includes(trigger) && selectedTriggers.length >= 2}
+                        className="mr-2 h-4 w-4"
+                      />
+                      <span className="text-sm">{trigger}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Reset Script <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={resetScript}
+                  onChange={(e) => setResetScript(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                >
+                  <option value="">Select reset procedure...</option>
+                  {RESET_SCRIPTS.map(script => (
+                    <option key={script} value={script}>{script}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Feedback */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="text-lg font-semibold mb-3 text-gray-900">Previous Session</h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Last Session Quality</label>
+                <div className="flex gap-2">
+                  {(['A', 'B', 'C'] as const).map(grade => (
+                    <button
+                      key={grade}
+                      type="button"
+                      onClick={() => setLastSessionQuality(grade)}
+                      className={`flex-1 py-2 px-4 rounded-md font-semibold transition-colors ${
+                        lastSessionQuality === grade
+                          ? grade === 'A'
+                            ? 'bg-green-600 text-white'
+                            : grade === 'B'
+                            ? 'bg-yellow-600 text-white'
+                            : 'bg-red-600 text-white'
+                          : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {grade}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center">
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={weeklyGoalOk}
+                    onChange={(e) => setWeeklyGoalOk(e.target.checked)}
+                    className="mr-2 h-4 w-4 text-blue-600 border-gray-300 rounded"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Weekly goal OK</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowGoalModal(true)}
+                  className="ml-3 text-sm text-blue-600 hover:text-blue-700"
+                >
+                  Edit weekly goal
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Submit */}
+          <div className="flex justify-between items-center pt-4">
             <Link
               to="/"
               className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               Cancel
             </Link>
+
             <button
               type="submit"
-              disabled={loading}
-              className={`px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                loading ? 'opacity-75 cursor-not-allowed' : ''
+              disabled={loading || !isFormValid()}
+              className={`px-6 py-2 rounded-md text-sm font-medium text-white transition-colors ${
+                loading || !isFormValid()
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : zone === 'STOP'
+                  ? 'bg-red-600 hover:bg-red-700'
+                  : zone === 'CAUTION'
+                  ? 'bg-yellow-600 hover:bg-yellow-700'
+                  : 'bg-green-600 hover:bg-green-700'
               }`}
             >
               {loading ? 'Saving...' : 'Start Session'}
@@ -584,6 +633,106 @@ const PreSession: React.FC = () => {
           </div>
         </form>
       </div>
+
+      {/* Weekly Goal Modal */}
+      {showGoalModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+          onClick={() => setShowGoalModal(false)}
+        >
+          <div
+            className="bg-white rounded-lg p-6 max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold mb-4">Update Weekly Goal</h3>
+            <textarea
+              value={weeklyGoalText}
+              onChange={(e) => setWeeklyGoalText(e.target.value)}
+              placeholder="What's your focus for this week?"
+              rows={4}
+              className="w-full p-2 border border-gray-300 rounded-md text-sm"
+            />
+            <div className="flex justify-end gap-3 mt-4">
+              <button
+                onClick={() => setShowGoalModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setShowGoalModal(false)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* STOP Zone Modal */}
+      {showStopModal && zone === 'STOP' && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+          onClick={() => setShowStopModal(false)}
+        >
+          <div
+            className="bg-white rounded-lg p-6 max-w-md w-full border-4 border-red-500"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start mb-4">
+              <AlertCircle className="text-red-600 mr-3 flex-shrink-0" size={32} />
+              <div>
+                <h3 className="text-xl font-bold text-red-600 mb-2">STOP Zone Warning</h3>
+                <p className="text-gray-700">
+                  Your A-Game Readiness Score is <strong className="text-red-600">{score}</strong>.
+                  Playing in this state significantly increases risk of poor decisions and tilt.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-red-800">
+                <strong>Recommendation:</strong> Do not play. Consider theory study, hand reviews, or rest instead.
+              </p>
+            </div>
+
+            <div className="mb-4">
+              <p className="text-sm font-medium text-gray-700 mb-2">If you still want to proceed, select a reason:</p>
+              <select
+                value={overrideReason}
+                onChange={(e) => setOverrideReason(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+              >
+                <option value="">Select reason...</option>
+                {OVERRIDE_REASONS.map(reason => (
+                  <option key={reason} value={reason}>{reason}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowStopModal(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md text-sm hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={!overrideReason}
+                className={`px-4 py-2 rounded-md text-sm font-medium text-white ${
+                  !overrideReason
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-red-600 hover:bg-red-700'
+                }`}
+              >
+                Override & Start
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
