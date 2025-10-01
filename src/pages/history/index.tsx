@@ -19,6 +19,8 @@ const SessionHistory: React.FC = () => {
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedSessionIndex, setSelectedSessionIndex] = useState(0);
+  const [viewMode, setViewMode] = useState<'individual' | 'summary'>('individual');
 
   useEffect(() => {
     const fetchSessions = async () => {
@@ -52,13 +54,16 @@ const SessionHistory: React.FC = () => {
   const previousMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
   const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
 
-  const getSessionForDay = (date: Date) => {
-    const session = sessions.find((session) => {
+  const getSessionsForDay = (date: Date) => {
+    return sessions.filter((session) => {
       const sessionDate = new Date(session.session_date);
-      const match = isSameDay(sessionDate, date);
-      return match;
+      return isSameDay(sessionDate, date);
     });
-    return session;
+  };
+
+  const getSessionForDay = (date: Date) => {
+    const daySessions = getSessionsForDay(date);
+    return daySessions.length > 0 ? daySessions[0] : null;
   };
 
   const getDayClasses = (day: Date) => {
@@ -131,15 +136,24 @@ const SessionHistory: React.FC = () => {
                       console.log('Clicked day:', format(day, 'yyyy-MM-dd'), 'Session:', session);
                       if (session) {
                         setSelectedDate(day);
+                        setSelectedSessionIndex(0);
+                        setViewMode('individual');
                       }
                     }}
                   >
                     <button className={getDayClasses(day)}>
                       {format(day, 'd')}
                       {session && (
-                        <span className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
-                          <span className="block h-1 w-1 rounded-full bg-current"></span>
-                        </span>
+                        <>
+                          <span className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
+                            <span className="block h-1 w-1 rounded-full bg-current"></span>
+                          </span>
+                          {getSessionsForDay(day).length > 1 && (
+                            <span className="absolute top-1 right-1 bg-blue-600 text-white text-[8px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                              {getSessionsForDay(day).length}
+                            </span>
+                          )}
+                        </>
                       )}
                     </button>
                   </div>
@@ -168,7 +182,14 @@ const SessionHistory: React.FC = () => {
             </button>
           </div>
 
-          <SessionDetails date={selectedDate} session={getSessionForDay(selectedDate)} />
+          <SessionDetails
+            date={selectedDate}
+            sessions={getSessionsForDay(selectedDate)}
+            selectedSessionIndex={selectedSessionIndex}
+            setSelectedSessionIndex={setSelectedSessionIndex}
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+          />
         </div>
       )}
     </div>
@@ -177,15 +198,207 @@ const SessionHistory: React.FC = () => {
 
 interface SessionDetailsProps {
   date: Date;
-  session: any;
+  sessions: any[];
+  selectedSessionIndex: number;
+  setSelectedSessionIndex: (index: number) => void;
+  viewMode: 'individual' | 'summary';
+  setViewMode: (mode: 'individual' | 'summary') => void;
 }
 
-const SessionDetails: React.FC<SessionDetailsProps> = ({ session }) => {
-  if (!session) {
+const SessionDetails: React.FC<SessionDetailsProps> = ({
+  sessions,
+  selectedSessionIndex,
+  setSelectedSessionIndex,
+  viewMode,
+  setViewMode,
+}) => {
+  if (!sessions || sessions.length === 0) {
     return <div className="text-center text-gray-500 py-8">No session recorded for this date</div>;
   }
 
-  return <SessionReadOnly session={session} />;
+  const currentSession = sessions[selectedSessionIndex];
+
+  return (
+    <div className="space-y-4">
+      {sessions.length > 1 && (
+        <div className="flex items-center justify-between border-b border-gray-200 pb-4">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm font-medium text-gray-700">
+              {sessions.length} session{sessions.length > 1 ? 's' : ''} on this day
+            </span>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('individual')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  viewMode === 'individual'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Individual
+              </button>
+              <button
+                onClick={() => setViewMode('summary')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  viewMode === 'summary'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Daily Summary
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {viewMode === 'individual' && sessions.length > 1 && (
+        <div className="flex items-center justify-center space-x-2">
+          <button
+            onClick={() => setSelectedSessionIndex(Math.max(0, selectedSessionIndex - 1))}
+            disabled={selectedSessionIndex === 0}
+            className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft size={20} />
+          </button>
+
+          <div className="flex items-center space-x-2">
+            {sessions.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setSelectedSessionIndex(index)}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  index === selectedSessionIndex
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Session {index + 1}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => setSelectedSessionIndex(Math.min(sessions.length - 1, selectedSessionIndex + 1))}
+            disabled={selectedSessionIndex === sessions.length - 1}
+            className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      )}
+
+      {viewMode === 'individual' ? (
+        <SessionReadOnly session={currentSession} />
+      ) : (
+        <DailySummary sessions={sessions} />
+      )}
+    </div>
+  );
+};
+
+interface DailySummaryProps {
+  sessions: any[];
+}
+
+const DailySummary: React.FC<DailySummaryProps> = ({ sessions }) => {
+  const totalMinutes = sessions.reduce((sum, s) => sum + (s.minutes_played || 0), 0);
+  const totalTables = sessions.reduce((sum, s) => sum + (s.tables_played || 0), 0);
+  const avgTables = Math.round(totalTables / sessions.length);
+
+  const gameLevelCounts = sessions.reduce((acc, s) => {
+    const level = s.game_level_self_rating || 'unknown';
+    acc[level] = (acc[level] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const dominantLevel = Object.entries(gameLevelCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'unknown';
+
+  const levelLabels: Record<string, string> = {
+    a: 'A-Game',
+    b: 'B-Game',
+    c: 'C-Game',
+    d: 'D-Game',
+  };
+
+  const levelColors: Record<string, string> = {
+    a: 'text-green-600 bg-green-50',
+    b: 'text-yellow-600 bg-yellow-50',
+    c: 'text-orange-600 bg-orange-50',
+    d: 'text-red-600 bg-red-50',
+  };
+
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-blue-50 rounded-lg p-4">
+          <div className="text-sm text-blue-600 font-medium mb-1">Total Sessions</div>
+          <div className="text-2xl font-bold text-blue-900">{sessions.length}</div>
+        </div>
+
+        <div className="bg-green-50 rounded-lg p-4">
+          <div className="text-sm text-green-600 font-medium mb-1">Total Time</div>
+          <div className="text-2xl font-bold text-green-900">
+            {hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`}
+          </div>
+        </div>
+
+        <div className="bg-purple-50 rounded-lg p-4">
+          <div className="text-sm text-purple-600 font-medium mb-1">Avg Tables</div>
+          <div className="text-2xl font-bold text-purple-900">{avgTables}</div>
+        </div>
+      </div>
+
+      <div className="bg-gray-50 rounded-lg p-4">
+        <div className="text-sm font-medium text-gray-700 mb-3">Game Quality Distribution</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {Object.entries(gameLevelCounts).map(([level, count]) => (
+            <div key={level} className={`rounded-lg p-3 ${levelColors[level] || 'bg-gray-100'}`}>
+              <div className="text-xs font-medium mb-1">{levelLabels[level] || level}</div>
+              <div className="text-lg font-bold">
+                {count} session{count > 1 ? 's' : ''}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {dominantLevel !== 'unknown' && (
+          <div className="mt-4 text-sm text-gray-600">
+            Dominant game quality: <span className="font-semibold">{levelLabels[dominantLevel]}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="border-t border-gray-200 pt-4">
+        <div className="text-sm font-medium text-gray-700 mb-3">Individual Sessions</div>
+        <div className="space-y-3">
+          {sessions.map((session, index) => (
+            <div key={session.id} className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm font-semibold text-gray-900">Session {index + 1}</span>
+                  <span className={`px-2 py-1 text-xs font-medium rounded ${
+                    levelColors[session.game_level_self_rating] || 'bg-gray-100'
+                  }`}>
+                    {levelLabels[session.game_level_self_rating] || 'Unknown'}
+                  </span>
+                </div>
+                <div className="text-sm text-gray-600">
+                  {session.minutes_played}m • {session.tables_played} table{session.tables_played > 1 ? 's' : ''}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default SessionHistory;
