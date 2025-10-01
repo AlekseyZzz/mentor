@@ -91,8 +91,6 @@ export async function getPostSessionHistory() {
         hand_description,
         initial_thought,
         adaptive_thought,
-        arguments_for_initial,
-        arguments_against_initial,
         spot_type,
         position_dynamic,
         tags,
