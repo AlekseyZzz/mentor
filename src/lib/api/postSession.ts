@@ -30,9 +30,16 @@ interface PostSessionData {
 }
 
 export async function submit(data: PostSessionData) {
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+
   const { error, data: inserted } = await supabase
     .from('post_session_reflections')
     .insert({
+      user_id: user.id,
       minutes_played: data.minutes_played,
       tables_played: data.tables_played,
       session_date: data.session_date,
