@@ -106,7 +106,7 @@ export async function getPostSessionHistory() {
         created_at
       )
     `)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: true });
 
   if (error) throw error;
   return data;
