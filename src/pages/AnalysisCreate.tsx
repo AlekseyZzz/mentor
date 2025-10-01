@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, Plus, X } from 'lucide-react';
+import { ArrowLeft, Upload, Plus, X, Clipboard } from 'lucide-react';
 import { createHandNote, uploadHandScreenshot, CreateHandNoteData } from '../lib/api/handNotes';
 import { ALL_TAGS, TILT_TYPES, GAME_STATES } from '../lib/constants/analysisТags';
 
@@ -29,35 +29,71 @@ const AnalysisCreate: React.FC = () => {
   const [nextTimePlan, setNextTimePlan] = useState('');
   const [markForReview, setMarkForReview] = useState(false);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'hand' | 'wizard') => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      alert('File size must be less than 10MB');
-      return;
-    }
+      const imageFiles: File[] = [];
 
-    if (!['image/png', 'image/jpeg', 'image/jpg', 'image/gif'].includes(file.type)) {
-      alert('Only PNG, JPG, and GIF images are allowed');
-      return;
-    }
-
-    try {
-      setUploadingScreenshot(true);
-      const url = await uploadHandScreenshot(file, type === 'hand' ? 'hands' : 'wizard');
-
-      if (type === 'hand') {
-        setScreenshots([...screenshots, url]);
-      } else {
-        setWizardScreenshots([...wizardScreenshots, url]);
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.indexOf('image') !== -1) {
+          const file = item.getAsFile();
+          if (file) {
+            imageFiles.push(file);
+          }
+        }
       }
-    } catch (error) {
-      console.error('Upload failed:', error);
-      alert('Failed to upload screenshot');
-    } finally {
-      setUploadingScreenshot(false);
+
+      if (imageFiles.length > 0) {
+        e.preventDefault();
+        const type = currentStep === 'front' ? 'hand' : 'wizard';
+        await handleMultipleFileUpload(imageFiles, type);
+      }
+    };
+
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
+  }, [currentStep, screenshots, wizardScreenshots]);
+
+  const handleMultipleFileUpload = async (files: File[], type: 'hand' | 'wizard') => {
+    for (const file of files) {
+      if (file.size > 10 * 1024 * 1024) {
+        alert(`File ${file.name} is too large (max 10MB)`);
+        continue;
+      }
+
+      if (!['image/png', 'image/jpeg', 'image/jpg', 'image/gif'].includes(file.type)) {
+        alert(`File ${file.name} is not a valid image format`);
+        continue;
+      }
+
+      try {
+        setUploadingScreenshot(true);
+        const url = await uploadHandScreenshot(file, type === 'hand' ? 'hands' : 'wizard');
+
+        if (type === 'hand') {
+          setScreenshots(prev => [...prev, url]);
+        } else {
+          setWizardScreenshots(prev => [...prev, url]);
+        }
+      } catch (error) {
+        console.error('Upload failed:', error);
+        alert(`Failed to upload ${file.name}`);
+      }
     }
+    setUploadingScreenshot(false);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'hand' | 'wizard') => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const fileArray = Array.from(files);
+    await handleMultipleFileUpload(fileArray, type);
+
+    e.target.value = '';
   };
 
   const removeScreenshot = (index: number, type: 'hand' | 'wizard') => {
@@ -239,16 +275,21 @@ const AnalysisCreate: React.FC = () => {
             <label className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 cursor-pointer transition-colors">
               <Upload size={20} className="text-gray-400" />
               <span className="text-sm text-gray-600">
-                {uploadingScreenshot ? 'Uploading...' : 'Upload screenshot (max 10MB)'}
+                {uploadingScreenshot ? 'Uploading...' : 'Upload screenshots (max 10MB each)'}
               </span>
               <input
                 type="file"
                 accept="image/png,image/jpeg,image/jpg,image/gif"
+                multiple
                 onChange={(e) => handleFileUpload(e, 'hand')}
                 disabled={uploadingScreenshot}
                 className="hidden"
               />
             </label>
+            <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
+              <Clipboard size={14} />
+              <span>Tip: You can also paste images directly (Ctrl+V / Cmd+V)</span>
+            </div>
           </div>
 
           <div>
@@ -375,16 +416,21 @@ const AnalysisCreate: React.FC = () => {
             <label className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 cursor-pointer transition-colors">
               <Upload size={20} className="text-gray-400" />
               <span className="text-sm text-gray-600">
-                {uploadingScreenshot ? 'Uploading...' : 'Upload Wizard screenshot'}
+                {uploadingScreenshot ? 'Uploading...' : 'Upload screenshots (max 10MB each)'}
               </span>
               <input
                 type="file"
                 accept="image/png,image/jpeg,image/jpg,image/gif"
+                multiple
                 onChange={(e) => handleFileUpload(e, 'wizard')}
                 disabled={uploadingScreenshot}
                 className="hidden"
               />
             </label>
+            <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
+              <Clipboard size={14} />
+              <span>Tip: You can also paste images directly (Ctrl+V / Cmd+V)</span>
+            </div>
           </div>
 
           <div>
