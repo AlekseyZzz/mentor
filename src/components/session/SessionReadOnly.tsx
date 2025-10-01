@@ -1,5 +1,5 @@
-import React from 'react';
-import { Brain, Heart, CheckCircle, X, AlertCircle, Image } from 'lucide-react';
+import React, { useState } from 'react';
+import { Brain, Heart, CheckCircle, X, AlertCircle, Image, ChevronDown, ChevronUp, ZoomIn } from 'lucide-react';
 import MentalTraitsDisplay from './MentalTraitsDisplay';
 
 interface SessionReadOnlyProps {
@@ -7,6 +7,15 @@ interface SessionReadOnlyProps {
 }
 
 const SessionReadOnly: React.FC<SessionReadOnlyProps> = ({ session }) => {
+  const [expandedHands, setExpandedHands] = useState<number[]>([0]);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  const toggleHand = (index: number) => {
+    setExpandedHands(prev =>
+      prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]
+    );
+  };
+
   return (
     <div className="space-y-8">
       {/* Session Summary */}
@@ -218,22 +227,41 @@ const SessionReadOnly: React.FC<SessionReadOnlyProps> = ({ session }) => {
             Hand Analysis
           </h3>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             {session.hand_analysis.map((hand: any, index: number) => (
-              <div key={hand.id} className="border-t border-gray-200 pt-4 first:border-0 first:pt-0">
-                <h4 className="font-medium text-gray-700 mb-3">Hand #{index + 1}</h4>
+              <div key={hand.id} className="border border-gray-200 rounded-lg">
+                <div
+                  className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50"
+                  onClick={() => toggleHand(index)}
+                >
+                  <h4 className="font-medium text-gray-700">Hand #{index + 1}</h4>
+                  {expandedHands.includes(index) ? (
+                    <ChevronUp size={20} className="text-gray-500" />
+                  ) : (
+                    <ChevronDown size={20} className="text-gray-500" />
+                  )}
+                </div>
 
-                {hand.screenshot_url && (
-                  <div className="mb-4">
-                    <img
-                      src={hand.screenshot_url}
-                      alt={`Hand ${index + 1} screenshot`}
-                      className="rounded-lg max-h-64 object-contain bg-gray-50"
-                    />
-                  </div>
-                )}
+                {expandedHands.includes(index) && (
+                  <div className="p-4 border-t border-gray-200">
+                    {hand.screenshot_url && (
+                      <div className="mb-4 relative group">
+                        <img
+                          src={hand.screenshot_url}
+                          alt={`Hand ${index + 1} screenshot`}
+                          className="rounded-lg max-h-64 object-contain bg-gray-50 cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedImage(hand.screenshot_url);
+                          }}
+                        />
+                        <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                          <ZoomIn size={16} />
+                        </div>
+                      </div>
+                    )}
 
-                <div className="space-y-3">
+                    <div className="space-y-3">
                   <div>
                     <h5 className="text-sm font-medium text-gray-600">Description</h5>
                     <p className="text-gray-700 whitespace-pre-wrap">{hand.hand_description}</p>
@@ -304,17 +332,24 @@ const SessionReadOnly: React.FC<SessionReadOnlyProps> = ({ session }) => {
                       <h5 className="text-sm font-medium text-gray-600 mb-2">Theory Attachments</h5>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                         {hand.theory_attachments.map((url: string, urlIndex: number) => (
-                          <img
-                            key={urlIndex}
-                            src={url}
-                            alt={`Theory attachment ${urlIndex + 1}`}
-                            className="rounded-lg h-32 w-full object-cover bg-gray-50 border border-gray-200"
-                          />
+                          <div key={urlIndex} className="relative group">
+                            <img
+                              src={url}
+                              alt={`Theory attachment ${urlIndex + 1}`}
+                              className="rounded-lg h-32 w-full object-cover bg-gray-50 border border-gray-200 cursor-pointer hover:opacity-90 transition-opacity"
+                              onClick={() => setSelectedImage(url)}
+                            />
+                            <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                              <ZoomIn size={14} />
+                            </div>
+                          </div>
                         ))}
                       </div>
                     </div>
                   )}
                 </div>
+              </div>
+              )}
               </div>
             ))}
           </div>
@@ -371,6 +406,29 @@ const SessionReadOnly: React.FC<SessionReadOnlyProps> = ({ session }) => {
                 <p className="text-blue-800 italic">"{session.reset_message}"</p>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Image Modal */}
+      {selectedImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="relative max-w-7xl max-h-full">
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute -top-10 right-0 text-white hover:text-gray-300 transition-colors"
+            >
+              <X size={32} />
+            </button>
+            <img
+              src={selectedImage}
+              alt="Enlarged view"
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
           </div>
         </div>
       )}
