@@ -7,6 +7,7 @@ import PostSession from './pages/PostSession';
 import ProgressTracker from './pages/ProgressTracker';
 import ImageAnalysis from './pages/ImageAnalysis';
 import Analysis from './pages/Analysis';
+import AnalysisCreate from './pages/AnalysisCreate';
 import KnowledgeBase from './pages/KnowledgeBase';
 import Settings from './pages/Settings';
 import Training from './pages/Training';
@@ -32,6 +33,7 @@ function App() {
           <Route path="progress" element={<ProgressTracker />} />
           <Route path="image-analysis" element={<ImageAnalysis />} />
           <Route path="analysis" element={<Analysis />} />
+          <Route path="analysis/create" element={<AnalysisCreate />} />
           <Route path="knowledge" element={<KnowledgeBase />} />
           <Route path="settings" element={<Settings />} />
           <Route path="training" element={<Training />} />
