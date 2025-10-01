@@ -1,14 +1,15 @@
 // src/pages/PostSession.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Info, Clock } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import HandAnalysis, { HandData } from '../components/session/HandAnalysis';
 import AutoResizeTextArea from '../components/common/AutoResizeTextArea';
 import MentalQualitySection from '../components/session/MentalQualitySection';
 import MentalGameNotes from '../components/session/MentalGameNotes';
 import { usePostSession } from '../hooks/usePostSession';
-import { createHandAnalysis } from '../lib/api/handAnalysis';
-import { createMentalGameNotes } from '../lib/api/mentalGameNotes';
+import { createHandAnalysis, updateHandAnalysis } from '../lib/api/handAnalysis';
+import { createMentalGameNotes, updateMentalGameNote, deleteMentalGameNote } from '../lib/api/mentalGameNotes';
+import { getPostSessionById, updatePostSession } from '../lib/api/postSession';
 
 interface MentalGameNote {
   id: string;
@@ -16,6 +17,11 @@ interface MentalGameNote {
 }
 
 const PostSession: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const editSessionId = searchParams.get('edit');
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isLoadingSession, setIsLoadingSession] = useState(false);
+
   const [minutesPlayed, setMinutesPlayed] = useState('');
   const [tableCount, setTableCount] = useState('1');
   const [energyLevel, setEnergyLevel] = useState('');
@@ -54,6 +60,82 @@ const PostSession: React.FC = () => {
   const navigate = useNavigate();
   const { submit, loading, error } = usePostSession();
 
+  useEffect(() => {
+    if (editSessionId) {
+      loadSessionData(editSessionId);
+    }
+  }, [editSessionId]);
+
+  const loadSessionData = async (sessionId: string) => {
+    setIsLoadingSession(true);
+    try {
+      const session = await getPostSessionById(sessionId);
+      setIsEditMode(true);
+
+      setMinutesPlayed(session.minutes_played?.toString() || '');
+      setTableCount(session.tables_played?.toString() || '1');
+      setEnergyLevel(session.energy_level || '');
+      setDidPreSession(session.pre_session_done || false);
+      setSkipReason(session.skip_reason || '');
+      setPreSessionFeeling(session.pre_session_feeling || '');
+      setHadStrongEmotions(session.had_strong_emotions);
+      setEmotion(session.emotion || '');
+      setEmotionTrigger(session.emotion_trigger || '');
+      setEmotionThoughts(session.emotion_thoughts || '');
+      setValidReaction(session.valid_reaction || '');
+      setExaggeratedReaction(session.exaggerated_reaction || '');
+      setFutureResponse(session.future_response || '');
+      setResetChecklist(session.reset_checklist || {
+        breathingDone: false,
+        visualizationDone: false,
+        selfWorthReminder: false
+      });
+      setResetMessage(session.reset_message || '');
+      setGameLevel(session.game_level_self_rating || '');
+      setNonAGameReasons(session.non_a_game_reasons || []);
+      setRescueAttempted(session.rescue_attempted || false);
+      setRescueStrategy(session.rescue_strategy || '');
+      setCGameMomentNote(session.c_game_moment_note || '');
+
+      if (session.hand_analysis && session.hand_analysis.length > 0) {
+        const handIndices = session.hand_analysis.map((_: any, idx: number) => idx);
+        setHands(handIndices);
+        setExpandedHands([0]);
+
+        const handsDataObj: { [key: number]: HandData } = {};
+        session.hand_analysis.forEach((hand: any, idx: number) => {
+          handsDataObj[idx] = {
+            id: hand.id,
+            screenshotUrl: hand.screenshot_url,
+            description: hand.hand_description,
+            initialThought: hand.initial_thought,
+            adaptiveThought: hand.adaptive_thought,
+            argumentsFor: hand.arguments_for_initial || '',
+            argumentsAgainst: hand.arguments_against_initial || '',
+            spotType: hand.spot_type || '',
+            positionDynamic: hand.position_dynamic || '',
+            tags: hand.tags || [],
+            priorityLevel: hand.priority_level || 'low',
+            theoryAttachments: hand.theory_attachments || []
+          };
+        });
+        setHandsData(handsDataObj);
+      }
+
+      if (session.mental_game_notes) {
+        setMentalGameNotes(session.mental_game_notes.map((note: any) => ({
+          id: note.id,
+          note_text: note.note_text
+        })));
+      }
+    } catch (err) {
+      console.error('Failed to load session:', err);
+      alert('Failed to load session data');
+    } finally {
+      setIsLoadingSession(false);
+    }
+  };
+
   const handleHandDataChange = (index: number, data: HandData) => {
     setHandsData(prev => ({ ...prev, [index]: data }));
   };
@@ -90,49 +172,87 @@ const PostSession: React.FC = () => {
     const day = String(now.getDate()).padStart(2, '0');
     const sessionDate = `${year}-${month}-${day}`;
 
+    const sessionPayload = {
+      minutes_played: minutes,
+      tables_played: parseInt(tableCount),
+      energy_level: energyLevel,
+      session_date: sessionDate,
+      mental_profiles: [],
+      pre_session_done: didPreSession,
+      skip_reason: !didPreSession ? skipReason : undefined,
+      pre_session_feeling: !didPreSession ? preSessionFeeling : undefined,
+      had_strong_emotions: hadStrongEmotions || false,
+      emotion,
+      emotion_trigger: emotionTrigger,
+      emotion_thoughts: emotionThoughts,
+      valid_reaction: validReaction,
+      exaggerated_reaction: exaggeratedReaction,
+      future_response: futureResponse,
+      reset_checklist: resetChecklist,
+      reset_message: resetMessage,
+      game_level_self_rating: gameLevel,
+      non_a_game_reasons: nonAGameReasons,
+      rescue_attempted: rescueAttempted,
+      rescue_strategy: rescueStrategy,
+      c_game_moment_note: cGameMomentNote
+    };
+
     try {
-      const sessionData = await submit({
-        minutes_played: minutes,
-        tables_played: parseInt(tableCount),
-        energy_level: energyLevel,
-        session_date: sessionDate,
-        mental_profiles: [],
-        pre_session_done: didPreSession,
-        skip_reason: !didPreSession ? skipReason : undefined,
-        pre_session_feeling: !didPreSession ? preSessionFeeling : undefined,
-        had_strong_emotions: hadStrongEmotions || false,
-        emotion,
-        emotion_trigger: emotionTrigger,
-        emotion_thoughts: emotionThoughts,
-        valid_reaction: validReaction,
-        exaggerated_reaction: exaggeratedReaction,
-        future_response: futureResponse,
-        reset_checklist: resetChecklist,
-        reset_message: resetMessage,
-        game_level_self_rating: gameLevel,
-        non_a_game_reasons: nonAGameReasons,
-        rescue_attempted: rescueAttempted,
-        rescue_strategy: rescueStrategy,
-        c_game_moment_note: cGameMomentNote
-      });
+      let sessionData;
 
-      const handsToSave = Object.values(handsData).filter(hand =>
-        hand.hand_description || hand.initial_thought || hand.adaptive_thought
-      );
+      if (isEditMode && editSessionId) {
+        sessionData = await updatePostSession(editSessionId, sessionPayload);
 
-      if (handsToSave.length > 0) {
-        await createHandAnalysis(sessionData.id, handsToSave);
+        const handsToSave = Object.values(handsData).filter(hand =>
+          hand.description || hand.initialThought || hand.adaptiveThought
+        );
+
+        for (const hand of handsToSave) {
+          if (hand.id && !hand.id.toString().startsWith('temp-')) {
+            await updateHandAnalysis(hand.id, hand);
+          } else {
+            await createHandAnalysis(editSessionId, [hand]);
+          }
+        }
+
+        for (const note of mentalGameNotes) {
+          if (note.id.startsWith('temp-')) {
+            await createMentalGameNotes(editSessionId, [note.note_text]);
+          } else {
+            await updateMentalGameNote(note.id, note.note_text);
+          }
+        }
+      } else {
+        sessionData = await submit(sessionPayload);
+
+        const handsToSave = Object.values(handsData).filter(hand =>
+          hand.description || hand.initialThought || hand.adaptiveThought
+        );
+
+        if (handsToSave.length > 0) {
+          await createHandAnalysis(sessionData.id, handsToSave);
+        }
+
+        if (mentalGameNotes.length > 0) {
+          await createMentalGameNotes(sessionData.id, mentalGameNotes.map(note => note.note_text));
+        }
       }
 
-      if (mentalGameNotes.length > 0) {
-        await createMentalGameNotes(sessionData.id, mentalGameNotes.map(note => note.note_text));
-      }
-
-      navigate('/');
+      navigate('/history');
     } catch (err) {
       console.error('Failed to submit session reflection:', err);
     }
   };
+
+  if (isLoadingSession) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -151,9 +271,13 @@ const PostSession: React.FC = () => {
         </div>
 
         <div className="mb-6">
-          <h2 className="text-xl font-semibold mb-2">Post-Session Reflection</h2>
+          <h2 className="text-xl font-semibold mb-2">
+            {isEditMode ? 'Edit Session Reflection' : 'Post-Session Reflection'}
+          </h2>
           <p className="text-gray-600">
-            Analyze your session performance, mental state, and key moments to improve future decision-making.
+            {isEditMode
+              ? 'Update your session analysis and reflections.'
+              : 'Analyze your session performance, mental state, and key moments to improve future decision-making.'}
           </p>
         </div>
 
@@ -259,7 +383,7 @@ const PostSession: React.FC = () => {
                 loading || parseInt(minutesPlayed) < 1 ? 'opacity-75 cursor-not-allowed' : ''
               }`}
             >
-              {loading ? 'Saving...' : 'Complete Session'}
+              {loading ? 'Saving...' : isEditMode ? 'Update Session' : 'Complete Session'}
             </button>
           </div>
         </form>

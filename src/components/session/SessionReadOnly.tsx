@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { Brain, Heart, CheckCircle, X, AlertCircle, Image, ChevronDown, ChevronUp, ZoomIn } from 'lucide-react';
+import { Brain, Heart, CheckCircle, X, AlertCircle, Image, ChevronDown, ChevronUp, ZoomIn, CreditCard as Edit2, Trash2 } from 'lucide-react';
 import MentalTraitsDisplay from './MentalTraitsDisplay';
 
 interface SessionReadOnlyProps {
-  session: any; // Type will be expanded based on joined tables
+  session: any;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-const SessionReadOnly: React.FC<SessionReadOnlyProps> = ({ session }) => {
+const SessionReadOnly: React.FC<SessionReadOnlyProps> = ({ session, onEdit, onDelete }) => {
   const [expandedHands, setExpandedHands] = useState<number[]>([0]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const toggleHand = (index: number) => {
     setExpandedHands(prev =>
@@ -16,8 +19,36 @@ const SessionReadOnly: React.FC<SessionReadOnlyProps> = ({ session }) => {
     );
   };
 
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete();
+      setShowDeleteConfirm(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-3">
+        {onEdit && (
+          <button
+            onClick={onEdit}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Edit2 size={18} />
+            Edit
+          </button>
+        )}
+        {onDelete && (
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            <Trash2 size={18} />
+            Delete
+          </button>
+        )}
+      </div>
       {/* Session Summary */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="bg-gray-50 p-4 rounded-lg">
@@ -429,6 +460,38 @@ const SessionReadOnly: React.FC<SessionReadOnlyProps> = ({ session }) => {
               className="max-w-full max-h-[90vh] object-contain rounded-lg"
               onClick={(e) => e.stopPropagation()}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+          onClick={() => setShowDeleteConfirm(false)}
+        >
+          <div
+            className="bg-white rounded-lg p-6 max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold mb-4">Delete Session</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this session? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}

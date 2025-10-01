@@ -111,3 +111,80 @@ export async function getPostSessionHistory() {
   if (error) throw error;
   return data;
 }
+
+export async function getPostSessionById(id: string) {
+  const { data, error } = await supabase
+    .from('post_session_reflections')
+    .select(`
+      *,
+      hand_analysis (
+        id,
+        screenshot_url,
+        hand_description,
+        initial_thought,
+        adaptive_thought,
+        arguments_for_initial,
+        arguments_against_initial,
+        spot_type,
+        position_dynamic,
+        tags,
+        priority_level,
+        theory_attachments,
+        created_at
+      ),
+      mental_game_notes (
+        id,
+        note_text,
+        created_at
+      )
+    `)
+    .eq('id', id)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function deletePostSession(id: string) {
+  const { error } = await supabase
+    .from('post_session_reflections')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+}
+
+export async function updatePostSession(id: string, data: Partial<PostSessionData>) {
+  const { error, data: updated } = await supabase
+    .from('post_session_reflections')
+    .update({
+      minutes_played: data.minutes_played,
+      tables_played: data.tables_played,
+      session_date: data.session_date,
+      energy_level: data.energy_level,
+      mental_profiles: data.mental_profiles,
+      pre_session_done: data.pre_session_done,
+      skip_reason: data.skip_reason,
+      pre_session_feeling: data.pre_session_feeling,
+      had_strong_emotions: data.had_strong_emotions,
+      emotion: data.emotion,
+      emotion_trigger: data.emotion_trigger,
+      emotion_thoughts: data.emotion_thoughts,
+      valid_reaction: data.valid_reaction,
+      exaggerated_reaction: data.exaggerated_reaction,
+      future_response: data.future_response,
+      reset_checklist: data.reset_checklist,
+      reset_message: data.reset_message,
+      game_level_self_rating: data.game_level_self_rating,
+      non_a_game_reasons: data.non_a_game_reasons,
+      rescue_attempted: data.rescue_attempted,
+      rescue_strategy: data.rescue_strategy,
+      c_game_moment_note: data.c_game_moment_note
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return updated;
+}

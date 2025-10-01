@@ -46,3 +46,15 @@ export const deleteMentalGameNote = async (noteId: string) => {
 
   if (error) throw error;
 };
+
+export const updateMentalGameNote = async (noteId: string, noteText: string) => {
+  const { data, error } = await supabase
+    .from('mental_game_notes')
+    .update({ note_text: noteText })
+    .eq('id', noteId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};

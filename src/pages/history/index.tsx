@@ -10,10 +10,12 @@ import {
   subMonths,
 } from 'date-fns';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import SessionReadOnly from '../../components/session/SessionReadOnly';
-import { getPostSessionHistory } from '../../lib/api/postSession';
+import { getPostSessionHistory, deletePostSession } from '../../lib/api/postSession';
 
 const SessionHistory: React.FC = () => {
+  const navigate = useNavigate();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [sessions, setSessions] = useState<any[]>([]);
@@ -22,23 +24,38 @@ const SessionHistory: React.FC = () => {
   const [selectedSessionIndex, setSelectedSessionIndex] = useState(0);
   const [viewMode, setViewMode] = useState<'individual' | 'summary'>('individual');
 
-  useEffect(() => {
-    const fetchSessions = async () => {
-      try {
-        const data = await getPostSessionHistory();
-        console.log('Loaded sessions:', data);
-        setSessions(data);
-        setError(null);
-      } catch (err: any) {
-        console.error('Failed to load sessions:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchSessions = async () => {
+    try {
+      const data = await getPostSessionHistory();
+      console.log('Loaded sessions:', data);
+      setSessions(data);
+      setError(null);
+    } catch (err: any) {
+      console.error('Failed to load sessions:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchSessions();
   }, []);
+
+  const handleEdit = (sessionId: string) => {
+    navigate(`/post-session?edit=${sessionId}`);
+  };
+
+  const handleDelete = async (sessionId: string) => {
+    try {
+      await deletePostSession(sessionId);
+      await fetchSessions();
+      setSelectedDate(null);
+    } catch (err: any) {
+      console.error('Failed to delete session:', err);
+      alert('Failed to delete session');
+    }
+  };
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -189,6 +206,8 @@ const SessionHistory: React.FC = () => {
             setSelectedSessionIndex={setSelectedSessionIndex}
             viewMode={viewMode}
             setViewMode={setViewMode}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
           />
         </div>
       )}
@@ -203,6 +222,8 @@ interface SessionDetailsProps {
   setSelectedSessionIndex: (index: number) => void;
   viewMode: 'individual' | 'summary';
   setViewMode: (mode: 'individual' | 'summary') => void;
+  onEdit: (sessionId: string) => void;
+  onDelete: (sessionId: string) => void;
 }
 
 const SessionDetails: React.FC<SessionDetailsProps> = ({
@@ -211,6 +232,8 @@ const SessionDetails: React.FC<SessionDetailsProps> = ({
   setSelectedSessionIndex,
   viewMode,
   setViewMode,
+  onEdit,
+  onDelete,
 }) => {
   if (!sessions || sessions.length === 0) {
     return <div className="text-center text-gray-500 py-8">No session recorded for this date</div>;
@@ -292,7 +315,11 @@ const SessionDetails: React.FC<SessionDetailsProps> = ({
       )}
 
       {viewMode === 'individual' ? (
-        <SessionReadOnly session={currentSession} />
+        <SessionReadOnly
+          session={currentSession}
+          onEdit={() => onEdit(currentSession.id)}
+          onDelete={() => onDelete(currentSession.id)}
+        />
       ) : (
         <DailySummary sessions={sessions} />
       )}

@@ -49,3 +49,27 @@ export const getSessionHandAnalysis = async (sessionId: string) => {
   if (error) throw error;
   return data;
 };
+
+export const updateHandAnalysis = async (handId: string, hand: any) => {
+  const { data, error } = await supabase
+    .from('hand_analysis')
+    .update({
+      screenshot_url: hand.screenshotUrl,
+      hand_description: hand.description,
+      initial_thought: hand.initialThought,
+      adaptive_thought: hand.adaptiveThought,
+      arguments_for_initial: hand.argumentsFor,
+      arguments_against_initial: hand.argumentsAgainst,
+      spot_type: hand.spotType,
+      position_dynamic: hand.positionDynamic,
+      tags: hand.tags,
+      priority_level: hand.priorityLevel,
+      theory_attachments: hand.theoryAttachments
+    })
+    .eq('id', handId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
