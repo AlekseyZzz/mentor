@@ -209,7 +209,7 @@ export const deleteHandNote = async (id: string, hard: boolean = false): Promise
 
 export const uploadHandScreenshot = async (
   file: File,
-  path: string = 'hands'
+  subfolder: string = 'hands'
 ): Promise<string> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
@@ -217,8 +217,9 @@ export const uploadHandScreenshot = async (
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
-  const fileName = `${user.id}/${year}/${month}/${Date.now()}-${file.name}`;
-  const filePath = `${path}/${fileName}`;
+  const timestamp = Date.now();
+  const safeFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+  const filePath = `${user.id}/${subfolder}/${year}/${month}/${timestamp}-${safeFileName}`;
 
   const { data, error } = await supabase.storage
     .from('hand-analysis')
