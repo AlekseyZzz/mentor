@@ -83,7 +83,29 @@ export async function getLatestPostSessionReflection() {
 export async function getPostSessionHistory() {
   const { data, error } = await supabase
     .from('post_session_reflections')
-    .select('*')
+    .select(`
+      *,
+      hand_analysis (
+        id,
+        screenshot_url,
+        hand_description,
+        initial_thought,
+        adaptive_thought,
+        arguments_for_initial,
+        arguments_against_initial,
+        spot_type,
+        position_dynamic,
+        tags,
+        priority_level,
+        theory_attachments,
+        created_at
+      ),
+      mental_game_notes (
+        id,
+        note_text,
+        created_at
+      )
+    `)
     .order('created_at', { ascending: false });
 
   if (error) throw error;

@@ -40,6 +40,31 @@ const SessionReadOnly: React.FC<SessionReadOnlyProps> = ({ session }) => {
         </div>
       </div>
 
+      {/* Pre-Session Details */}
+      {!session.pre_session_done && (session.skip_reason || session.pre_session_feeling) && (
+        <div className="bg-amber-50 rounded-lg border border-amber-200 p-6">
+          <h3 className="text-lg font-medium mb-4 flex items-center">
+            <AlertCircle className="mr-2 text-amber-600" size={20} />
+            Pre-Session Skipped
+          </h3>
+
+          <div className="space-y-3">
+            {session.skip_reason && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 mb-1">Reason for Skipping</h4>
+                <p className="text-gray-600">{session.skip_reason}</p>
+              </div>
+            )}
+            {session.pre_session_feeling && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 mb-1">How You Felt</h4>
+                <p className="text-gray-600">{session.pre_session_feeling}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Mental Game Quality */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h3 className="text-lg font-medium mb-4 flex items-center">
@@ -167,6 +192,24 @@ const SessionReadOnly: React.FC<SessionReadOnlyProps> = ({ session }) => {
         </div>
       )}
 
+      {/* Mental Game Notes */}
+      {session.mental_game_notes && session.mental_game_notes.length > 0 && (
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h3 className="text-lg font-medium mb-4 flex items-center">
+            <Brain className="mr-2 text-blue-600" size={20} />
+            Notable Mental Game Moments
+          </h3>
+
+          <div className="space-y-3">
+            {session.mental_game_notes.map((note: any, index: number) => (
+              <div key={note.id} className="bg-blue-50 p-4 rounded-lg">
+                <p className="text-gray-700">{note.note_text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Hand Analysis */}
       {session.hand_analysis && session.hand_analysis.length > 0 && (
         <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -179,11 +222,11 @@ const SessionReadOnly: React.FC<SessionReadOnlyProps> = ({ session }) => {
             {session.hand_analysis.map((hand: any, index: number) => (
               <div key={hand.id} className="border-t border-gray-200 pt-4 first:border-0 first:pt-0">
                 <h4 className="font-medium text-gray-700 mb-3">Hand #{index + 1}</h4>
-                
+
                 {hand.screenshot_url && (
                   <div className="mb-4">
-                    <img 
-                      src={hand.screenshot_url} 
+                    <img
+                      src={hand.screenshot_url}
                       alt={`Hand ${index + 1} screenshot`}
                       className="rounded-lg max-h-64 object-contain bg-gray-50"
                     />
@@ -193,18 +236,44 @@ const SessionReadOnly: React.FC<SessionReadOnlyProps> = ({ session }) => {
                 <div className="space-y-3">
                   <div>
                     <h5 className="text-sm font-medium text-gray-600">Description</h5>
-                    <p className="text-gray-700">{hand.hand_description}</p>
+                    <p className="text-gray-700 whitespace-pre-wrap">{hand.hand_description}</p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <h5 className="text-sm font-medium text-gray-600">Initial Thought</h5>
-                      <p className="text-gray-700">{hand.initial_thought}</p>
+                      <p className="text-gray-700 whitespace-pre-wrap">{hand.initial_thought}</p>
                     </div>
                     <div>
                       <h5 className="text-sm font-medium text-gray-600">Adaptive Thought</h5>
-                      <p className="text-gray-700">{hand.adaptive_thought}</p>
+                      <p className="text-gray-700 whitespace-pre-wrap">{hand.adaptive_thought}</p>
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h5 className="text-sm font-medium text-gray-600">Arguments For Initial Thought</h5>
+                      <p className="text-gray-700 whitespace-pre-wrap">{hand.arguments_for_initial}</p>
+                    </div>
+                    <div>
+                      <h5 className="text-sm font-medium text-gray-600">Arguments Against Initial Thought</h5>
+                      <p className="text-gray-700 whitespace-pre-wrap">{hand.arguments_against_initial}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {hand.spot_type && (
+                      <div>
+                        <h5 className="text-sm font-medium text-gray-600">Spot Type</h5>
+                        <p className="text-gray-700">{hand.spot_type}</p>
+                      </div>
+                    )}
+                    {hand.position_dynamic && (
+                      <div>
+                        <h5 className="text-sm font-medium text-gray-600">Position Dynamic</h5>
+                        <p className="text-gray-700">{hand.position_dynamic}</p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap gap-2">
@@ -223,6 +292,22 @@ const SessionReadOnly: React.FC<SessionReadOnlyProps> = ({ session }) => {
                       </span>
                     )}
                   </div>
+
+                  {hand.theory_attachments && hand.theory_attachments.length > 0 && (
+                    <div>
+                      <h5 className="text-sm font-medium text-gray-600 mb-2">Theory Attachments</h5>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {hand.theory_attachments.map((url: string, urlIndex: number) => (
+                          <img
+                            key={urlIndex}
+                            src={url}
+                            alt={`Theory attachment ${urlIndex + 1}`}
+                            className="rounded-lg h-32 w-full object-cover bg-gray-50 border border-gray-200"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
