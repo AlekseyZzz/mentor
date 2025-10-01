@@ -2,11 +2,13 @@
 import React, { useState } from 'react';
 import { Info, Clock } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import HandAnalysis from '../components/session/HandAnalysis';
+import HandAnalysis, { HandData } from '../components/session/HandAnalysis';
 import AutoResizeTextArea from '../components/common/AutoResizeTextArea';
 import MentalQualitySection from '../components/session/MentalQualitySection';
 import MentalGameNotes from '../components/session/MentalGameNotes';
 import { usePostSession } from '../hooks/usePostSession';
+import { createHandAnalysis } from '../lib/api/handAnalysis';
+import { createMentalGameNotes } from '../lib/api/mentalGameNotes';
 
 interface MentalGameNote {
   id: string;
@@ -40,6 +42,7 @@ const PostSession: React.FC = () => {
   const [resetMessage, setResetMessage] = useState('');
   const [mentalGameNotes, setMentalGameNotes] = useState<MentalGameNote[]>([]);
   const [noteIdCounter, setNoteIdCounter] = useState(0);
+  const [handsData, setHandsData] = useState<{ [key: number]: HandData }>({});
 
   const [gameLevel, setGameLevel] = useState('');
   const [nonAGameReasons, setNonAGameReasons] = useState<string[]>([]);
@@ -50,6 +53,10 @@ const PostSession: React.FC = () => {
 
   const navigate = useNavigate();
   const { submit, loading, error } = usePostSession();
+
+  const handleHandDataChange = (index: number, data: HandData) => {
+    setHandsData(prev => ({ ...prev, [index]: data }));
+  };
 
   const handleAddNote = (noteText: string) => {
     const newNote = {
@@ -84,7 +91,7 @@ const PostSession: React.FC = () => {
     const sessionDate = `${year}-${month}-${day}`;
 
     try {
-      await submit({
+      const sessionData = await submit({
         minutes_played: minutes,
         tables_played: parseInt(tableCount),
         energy_level: energyLevel,
@@ -108,6 +115,18 @@ const PostSession: React.FC = () => {
         rescue_strategy: rescueStrategy,
         c_game_moment_note: cGameMomentNote
       });
+
+      const handsToSave = Object.values(handsData).filter(hand =>
+        hand.hand_description || hand.initial_thought || hand.adaptive_thought
+      );
+
+      if (handsToSave.length > 0) {
+        await createHandAnalysis(sessionData.id, handsToSave);
+      }
+
+      if (mentalGameNotes.length > 0) {
+        await createMentalGameNotes(sessionData.id, mentalGameNotes.map(note => note.note_text));
+      }
 
       navigate('/');
     } catch (err) {
@@ -220,6 +239,7 @@ const PostSession: React.FC = () => {
                 index={index}
                 expanded={expandedHands.includes(index)}
                 onToggle={() => toggleHand(index)}
+                onChange={(data) => handleHandDataChange(index, data)}
               />
             ))}
           </div>

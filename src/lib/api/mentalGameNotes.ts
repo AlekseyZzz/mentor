@@ -10,13 +10,15 @@ export interface MentalGameNote {
 export const createMentalGameNotes = async (sessionId: string, notes: string[]) => {
   if (!notes.length) return [];
 
+  const { data: { user } } = await supabase.auth.getUser();
+
   const { data, error } = await supabase
     .from('mental_game_notes')
     .insert(
       notes.map(note => ({
         session_id: sessionId,
         note_text: note,
-        user_id: (await supabase.auth.getUser()).data.user?.id
+        user_id: user?.id
       }))
     )
     .select();

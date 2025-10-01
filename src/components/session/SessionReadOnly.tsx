@@ -250,6 +250,23 @@ const SessionReadOnly: React.FC<SessionReadOnlyProps> = ({ session }) => {
                     </div>
                   </div>
 
+                  {(hand.arguments_for_initial || hand.arguments_against_initial) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {hand.arguments_for_initial && (
+                        <div>
+                          <h5 className="text-sm font-medium text-gray-600">Arguments For Initial Thought</h5>
+                          <p className="text-gray-700 whitespace-pre-wrap">{hand.arguments_for_initial}</p>
+                        </div>
+                      )}
+                      {hand.arguments_against_initial && (
+                        <div>
+                          <h5 className="text-sm font-medium text-gray-600">Arguments Against Initial Thought</h5>
+                          <p className="text-gray-700 whitespace-pre-wrap">{hand.arguments_against_initial}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {hand.spot_type && (
                       <div>

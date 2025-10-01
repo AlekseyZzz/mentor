@@ -2,19 +2,38 @@ import React, { useState, useCallback, useRef } from 'react';
 import { Tag, Brain, AlertTriangle, ChevronDown, ChevronUp, Image as ImageIcon, X } from 'lucide-react';
 import Select from 'react-select';
 
+export interface HandData {
+  screenshot_url?: string;
+  hand_description: string;
+  initial_thought: string;
+  adaptive_thought: string;
+  arguments_for_initial?: string;
+  arguments_against_initial?: string;
+  spot_type?: string;
+  position_dynamic?: string;
+  tags: string[];
+  priority_level?: 'high' | 'medium' | 'low';
+  theory_attachments: string[];
+}
+
 interface HandAnalysisProps {
   index: number;
   expanded: boolean;
   onToggle: () => void;
+  onChange?: (data: HandData) => void;
 }
 
-const HandAnalysis: React.FC<HandAnalysisProps> = ({ index, expanded, onToggle }) => {
+const HandAnalysis: React.FC<HandAnalysisProps> = ({ index, expanded, onToggle, onChange }) => {
   const [handScreenshot, setHandScreenshot] = useState<string | null>(null);
   const [handDescription, setHandDescription] = useState('');
   const [initialThought, setInitialThought] = useState('');
   const [adaptiveThought, setAdaptiveThought] = useState('');
   const [forArguments, setForArguments] = useState('');
   const [againstArguments, setAgainstArguments] = useState('');
+  const [spotType, setSpotType] = useState<string>('');
+  const [positionDynamic, setPositionDynamic] = useState<string>('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [priorityLevel, setPriorityLevel] = useState<'high' | 'medium' | 'low' | undefined>();
   const [theoryAttachments, setTheoryAttachments] = useState<Array<{ id: string; image: string; caption: string }>>([]);
   
   // Track which section is focused
@@ -129,6 +148,25 @@ const HandAnalysis: React.FC<HandAnalysisProps> = ({ index, expanded, onToggle }
   const removeTheoryAttachment = (id: string) => {
     setTheoryAttachments(prev => prev.filter(attachment => attachment.id !== id));
   };
+
+  React.useEffect(() => {
+    if (onChange) {
+      const handData: HandData = {
+        screenshot_url: handScreenshot || undefined,
+        hand_description: handDescription,
+        initial_thought: initialThought,
+        adaptive_thought: adaptiveThought,
+        arguments_for_initial: forArguments || undefined,
+        arguments_against_initial: againstArguments || undefined,
+        spot_type: spotType || undefined,
+        position_dynamic: positionDynamic || undefined,
+        tags: tags,
+        priority_level: priorityLevel,
+        theory_attachments: theoryAttachments.map(att => att.image)
+      };
+      onChange(handData);
+    }
+  }, [handScreenshot, handDescription, initialThought, adaptiveThought, forArguments, againstArguments, spotType, positionDynamic, tags, priorityLevel, theoryAttachments, onChange]);
 
   React.useEffect(() => {
     const handleFocus = (event: FocusEvent) => {
@@ -296,6 +334,7 @@ const HandAnalysis: React.FC<HandAnalysisProps> = ({ index, expanded, onToggle }
                 options={spotTypes}
                 placeholder="Select spot type..."
                 className="text-sm"
+                onChange={(option) => setSpotType(option?.value || '')}
               />
             </div>
 
@@ -307,6 +346,7 @@ const HandAnalysis: React.FC<HandAnalysisProps> = ({ index, expanded, onToggle }
                 options={positions}
                 placeholder="Select positions..."
                 className="text-sm"
+                onChange={(option) => setPositionDynamic(option?.value || '')}
               />
             </div>
           </div>
@@ -327,6 +367,7 @@ const HandAnalysis: React.FC<HandAnalysisProps> = ({ index, expanded, onToggle }
               ]}
               placeholder="Add tags..."
               className="text-sm"
+              onChange={(options) => setTags(options ? options.map(o => o.value) : [])}
             />
           </div>
 
@@ -339,7 +380,13 @@ const HandAnalysis: React.FC<HandAnalysisProps> = ({ index, expanded, onToggle }
               {priorities.map((priority) => (
                 <button
                   key={priority.value}
-                  className={`px-3 py-1 rounded-full text-sm ${priority.color}`}
+                  type="button"
+                  onClick={() => setPriorityLevel(priority.value as 'high' | 'medium' | 'low')}
+                  className={`px-3 py-1 rounded-full text-sm ${
+                    priorityLevel === priority.value
+                      ? priority.color + ' ring-2 ring-offset-2 ring-blue-500'
+                      : priority.color + ' opacity-50'
+                  }`}
                 >
                   {priority.label}
                 </button>

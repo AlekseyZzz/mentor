@@ -7,6 +7,8 @@ export interface HandAnalysis {
   hand_description: string;
   initial_thought: string;
   adaptive_thought: string;
+  arguments_for_initial?: string;
+  arguments_against_initial?: string;
   spot_type?: string;
   position_dynamic?: string;
   tags: string[];
@@ -20,13 +22,15 @@ export interface HandAnalysis {
 export const createHandAnalysis = async (sessionId: string, hands: Omit<HandAnalysis, 'id' | 'session_id'>[]) => {
   if (!hands.length) return [];
 
+  const { data: { user } } = await supabase.auth.getUser();
+
   const { data, error } = await supabase
     .from('hand_analysis')
     .insert(
       hands.map(hand => ({
         ...hand,
         session_id: sessionId,
-        user_id: (await supabase.auth.getUser()).data.user?.id
+        user_id: user?.id
       }))
     )
     .select();
