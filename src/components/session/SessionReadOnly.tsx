@@ -10,21 +10,25 @@ const SessionReadOnly: React.FC<SessionReadOnlyProps> = ({ session }) => {
   return (
     <div className="space-y-8">
       {/* Session Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="bg-gray-50 p-4 rounded-lg">
           <h4 className="text-sm font-medium text-gray-500">Duration</h4>
-          <p className="text-lg font-semibold">{session.minutes_played} minutes</p>
+          <p className="text-lg font-semibold">{session.minutes_played} min</p>
+        </div>
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <h4 className="text-sm font-medium text-gray-500">Tables</h4>
+          <p className="text-lg font-semibold">{session.tables_played || 1}</p>
         </div>
         <div className="bg-gray-50 p-4 rounded-lg">
           <h4 className="text-sm font-medium text-gray-500">Mental State</h4>
-          <p className="text-lg font-semibold capitalize">{session.dominant_profile}-Game</p>
+          <p className="text-lg font-semibold capitalize">{session.game_level_self_rating || session.dominant_profile}-Game</p>
         </div>
         <div className="bg-gray-50 p-4 rounded-lg">
           <h4 className="text-sm font-medium text-gray-500">Energy Level</h4>
-          <p className="text-lg font-semibold">{session.energy_level}</p>
+          <p className="text-lg font-semibold capitalize">{session.energy_level}</p>
         </div>
         <div className="bg-gray-50 p-4 rounded-lg">
-          <h4 className="text-sm font-medium text-gray-500">Pre-Session Done</h4>
+          <h4 className="text-sm font-medium text-gray-500">Pre-Session</h4>
           <p className="text-lg font-semibold flex items-center">
             {session.pre_session_done ? (
               <CheckCircle className="text-green-600 mr-1" size={20} />
