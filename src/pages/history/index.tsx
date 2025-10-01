@@ -24,9 +24,11 @@ const SessionHistory: React.FC = () => {
     const fetchSessions = async () => {
       try {
         const data = await getPostSessionHistory();
+        console.log('Loaded sessions:', data);
         setSessions(data);
         setError(null);
       } catch (err: any) {
+        console.error('Failed to load sessions:', err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -38,13 +40,25 @@ const SessionHistory: React.FC = () => {
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
-  const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+
+  const calendarStart = new Date(monthStart);
+  calendarStart.setDate(calendarStart.getDate() - calendarStart.getDay());
+
+  const calendarEnd = new Date(monthEnd);
+  calendarEnd.setDate(calendarEnd.getDate() + (6 - calendarEnd.getDay()));
+
+  const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   const previousMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
   const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
 
   const getSessionForDay = (date: Date) => {
-    return sessions.find((session) => isSameDay(new Date(session.session_date), date));
+    const session = sessions.find((session) => {
+      const sessionDate = new Date(session.session_date);
+      const match = isSameDay(sessionDate, date);
+      return match;
+    });
+    return session;
   };
 
   const getDayClasses = (day: Date) => {
@@ -66,7 +80,8 @@ const SessionHistory: React.FC = () => {
       d: 'bg-red-100 text-red-800 hover:bg-red-200',
     };
 
-    const color = profileColors[session.dominant_profile as keyof typeof profileColors] || 'bg-gray-100';
+    const gameLevel = session.game_level_self_rating || session.dominant_profile;
+    const color = profileColors[gameLevel as keyof typeof profileColors] || 'bg-gray-100';
     return `${baseClasses} ${color}`;
   };
 
@@ -112,7 +127,12 @@ const SessionHistory: React.FC = () => {
                   <div
                     key={day.toString()}
                     className="relative flex items-center justify-center"
-                    onClick={() => setSelectedDate(session ? day : null)}
+                    onClick={() => {
+                      console.log('Clicked day:', format(day, 'yyyy-MM-dd'), 'Session:', session);
+                      if (session) {
+                        setSelectedDate(day);
+                      }
+                    }}
                   >
                     <button className={getDayClasses(day)}>
                       {format(day, 'd')}
