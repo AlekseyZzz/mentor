@@ -22,6 +22,11 @@ interface PostSessionData {
     selfWorthReminder: boolean;
   };
   reset_message: string;
+  game_level_self_rating?: string;
+  non_a_game_reasons?: string[];
+  rescue_attempted?: boolean;
+  rescue_strategy?: string;
+  c_game_moment_note?: string;
 }
 
 export async function submit(data: PostSessionData) {
@@ -44,7 +49,12 @@ export async function submit(data: PostSessionData) {
       exaggerated_reaction: data.exaggerated_reaction,
       future_response: data.future_response,
       reset_checklist: data.reset_checklist,
-      reset_message: data.reset_message
+      reset_message: data.reset_message,
+      game_level_self_rating: data.game_level_self_rating,
+      non_a_game_reasons: data.non_a_game_reasons,
+      rescue_attempted: data.rescue_attempted,
+      rescue_strategy: data.rescue_strategy,
+      c_game_moment_note: data.c_game_moment_note
     })
     .select()
     .single();
@@ -67,7 +77,7 @@ export async function getPostSessionHistory() {
   const { data, error } = await supabase
     .from('post_session_reflections')
     .select('*')
-    .order('session_date', { ascending: false });
+    .order('created_at', { ascending: false });
 
   if (error) throw error;
   return data;

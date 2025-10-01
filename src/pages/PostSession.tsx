@@ -97,7 +97,12 @@ const PostSession: React.FC = () => {
         exaggerated_reaction: exaggeratedReaction,
         future_response: futureResponse,
         reset_checklist: resetChecklist,
-        reset_message: resetMessage
+        reset_message: resetMessage,
+        game_level_self_rating: gameLevel,
+        non_a_game_reasons: nonAGameReasons,
+        rescue_attempted: rescueAttempted,
+        rescue_strategy: rescueStrategy,
+        c_game_moment_note: cGameMomentNote
       });
 
       navigate('/');
@@ -170,7 +175,7 @@ const PostSession: React.FC = () => {
           <MentalQualitySection
             gameLevel={gameLevel}
             onGameLevelChange={setGameLevel}
-            nonAGameReasons={setNonAGameReasons}
+            nonAGameReasons={nonAGameReasons}
             onNonAGameReasonsChange={setNonAGameReasons}
             otherReason={otherReason}
             onOtherReasonChange={setOtherReason}
