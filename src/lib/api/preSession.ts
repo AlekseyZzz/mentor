@@ -16,7 +16,8 @@ export interface PreSessionProtocol {
   physical_prep_water: boolean;
   physical_prep_food: boolean;
   physical_prep_stretch: boolean;
-  physical_prep_caffeine: boolean;
+  caffeine_intake: number;
+  caffeine_penalty: number;
   phys_score: number;
   a_game_score: number | null;
   readiness_zone: string | null;

@@ -10,16 +10,31 @@ interface AGameReadinessCheckProps {
     water: boolean;
     food: boolean;
     stretch: boolean;
-    caffeine: boolean;
   };
+  caffeineIntake: number;
   skipCheck: boolean;
   onSleepQualityChange: (value: number) => void;
   onEnergyLevelChange: (value: number) => void;
   onMentalClarityChange: (value: number) => void;
   onEmotionalStabilityChange: (value: number) => void;
-  onPhysicalPrepChange: (prep: { water: boolean; food: boolean; stretch: boolean; caffeine: boolean }) => void;
+  onPhysicalPrepChange: (prep: { water: boolean; food: boolean; stretch: boolean }) => void;
+  onCaffeineIntakeChange: (level: number) => void;
   onSkipCheckChange: (skip: boolean) => void;
 }
+
+const CAFFEINE_LABELS = {
+  0: 'None (clean baseline)',
+  1: '1 cup (coffee/espresso)',
+  2: '2-3 cups (latte + tea/cola)',
+  3: 'Heavy (>3 cups / energy drinks)'
+};
+
+const CAFFEINE_PENALTIES = {
+  0: 0,
+  1: 0,
+  2: -5,
+  3: -10
+};
 
 const AGameReadinessCheck: React.FC<AGameReadinessCheckProps> = ({
   sleepQuality,
@@ -27,29 +42,32 @@ const AGameReadinessCheck: React.FC<AGameReadinessCheckProps> = ({
   mentalClarity,
   emotionalStability,
   physicalPrep,
+  caffeineIntake,
   skipCheck,
   onSleepQualityChange,
   onEnergyLevelChange,
   onMentalClarityChange,
   onEmotionalStabilityChange,
   onPhysicalPrepChange,
+  onCaffeineIntakeChange,
   onSkipCheckChange,
 }) => {
   const [score, setScore] = useState<number | null>(null);
   const [zone, setZone] = useState<'GO' | 'CAUTION' | 'STOP' | null>(null);
+  const [caffeinePenalty, setCaffeinePenalty] = useState(0);
 
   useEffect(() => {
     if (skipCheck) {
       setScore(null);
       setZone(null);
+      setCaffeinePenalty(0);
       return;
     }
 
     const physicalPrepScore =
-      (physicalPrep.water ? 2.5 : 0) +
-      (physicalPrep.food ? 2.5 : 0) +
-      (physicalPrep.stretch ? 2.5 : 0) +
-      (physicalPrep.caffeine ? 2.5 : 0);
+      (physicalPrep.water ? 3.33 : 0) +
+      (physicalPrep.food ? 3.33 : 0) +
+      (physicalPrep.stretch ? 3.34 : 0);
 
     const allFieldsFilled =
       sleepQuality > 0 &&
@@ -60,12 +78,18 @@ const AGameReadinessCheck: React.FC<AGameReadinessCheckProps> = ({
     if (!allFieldsFilled) {
       setScore(null);
       setZone(null);
+      setCaffeinePenalty(0);
       return;
     }
 
-    const calculatedScore = Math.round(
+    const penalty = CAFFEINE_PENALTIES[caffeineIntake as keyof typeof CAFFEINE_PENALTIES];
+    setCaffeinePenalty(penalty);
+
+    const baseScore = Math.round(
       ((sleepQuality + energyLevel + mentalClarity + emotionalStability + physicalPrepScore) / 5) * 10
     );
+
+    const calculatedScore = Math.max(0, Math.min(100, baseScore + penalty));
 
     setScore(calculatedScore);
 
@@ -76,7 +100,7 @@ const AGameReadinessCheck: React.FC<AGameReadinessCheckProps> = ({
     } else {
       setZone('STOP');
     }
-  }, [sleepQuality, energyLevel, mentalClarity, emotionalStability, physicalPrep, skipCheck]);
+  }, [sleepQuality, energyLevel, mentalClarity, emotionalStability, physicalPrep, caffeineIntake, skipCheck]);
 
   const getZoneColor = () => {
     if (!zone) return 'bg-gray-100 text-gray-600';
@@ -110,6 +134,15 @@ const AGameReadinessCheck: React.FC<AGameReadinessCheckProps> = ({
     if (!score) return 0;
     return (score / 100) * 283;
   };
+
+  const getCaffeineWarning = () => {
+    if (caffeineIntake === 0) return { text: 'Clean baseline', color: 'text-green-600' };
+    if (caffeineIntake === 1) return { text: 'OK - standard dose', color: 'text-green-600' };
+    if (caffeineIntake === 2) return { text: 'Warning: possible impulsiveness/increased stress', color: 'text-orange-600' };
+    return { text: 'High risk: overload may cause tilt and sleep disruption', color: 'text-red-600' };
+  };
+
+  const caffeineWarning = getCaffeineWarning();
 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 border-2 border-blue-200">
@@ -238,17 +271,32 @@ const AGameReadinessCheck: React.FC<AGameReadinessCheckProps> = ({
                     <TrendingUp className="mr-2 text-green-500" size={18} />
                     <span className="text-sm font-medium">Stretch</span>
                   </label>
+                </div>
+              </div>
 
-                  <label className="flex items-center p-3 bg-white rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={physicalPrep.caffeine}
-                      onChange={(e) => onPhysicalPrepChange({ ...physicalPrep, caffeine: e.target.checked })}
-                      className="h-5 w-5 text-blue-600 border-gray-300 rounded mr-3"
-                    />
-                    <Coffee className="mr-2 text-amber-600" size={18} />
-                    <span className="text-sm font-medium">Caffeine OK</span>
-                  </label>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                  <Coffee className="mr-2 text-amber-600" size={18} />
+                  Caffeine Intake
+                </label>
+                <select
+                  value={caffeineIntake}
+                  onChange={(e) => onCaffeineIntakeChange(Number(e.target.value))}
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm bg-white"
+                >
+                  {Object.entries(CAFFEINE_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+                <div className={`mt-2 text-sm font-medium ${caffeineWarning.color}`}>
+                  {caffeineWarning.text}
+                  {caffeinePenalty < 0 && (
+                    <span className="ml-2">
+                      (Score penalty: {caffeinePenalty})
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

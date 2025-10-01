@@ -75,8 +75,8 @@ const PreSession: React.FC = () => {
     water: false,
     food: false,
     stretch: false,
-    caffeine: false,
   });
+  const [caffeineIntake, setCaffeineIntake] = useState(0);
   const [skipReadinessCheck, setSkipReadinessCheck] = useState(false);
 
   const [stopLossBi, setStopLossBi] = useState(3);
@@ -107,23 +107,28 @@ const PreSession: React.FC = () => {
     }
 
     const physScore =
-      (readinessPhysicalPrep.water ? 2.5 : 0) +
-      (readinessPhysicalPrep.food ? 2.5 : 0) +
-      (readinessPhysicalPrep.stretch ? 2.5 : 0) +
-      (readinessPhysicalPrep.caffeine ? 2.5 : 0);
+      (readinessPhysicalPrep.water ? 3.33 : 0) +
+      (readinessPhysicalPrep.food ? 3.33 : 0) +
+      (readinessPhysicalPrep.stretch ? 3.34 : 0);
 
-    const raw = (readinessSleep + readinessEnergy + readinessClarity + readinessEmotions + physScore) / 5;
-    const score = Math.round(raw * 10);
+    const caffeinePenaltyMap: { [key: number]: number } = { 0: 0, 1: 0, 2: -5, 3: -10 };
+    const caffeinePenalty = caffeinePenaltyMap[caffeineIntake] || 0;
+
+    const baseScore = Math.round(
+      ((readinessSleep + readinessEnergy + readinessClarity + readinessEmotions + physScore) / 5) * 10
+    );
+
+    const score = Math.max(0, Math.min(100, baseScore + caffeinePenalty));
 
     let zone: 'GO' | 'CAUTION' | 'STOP';
     if (score >= 70) zone = 'GO';
     else if (score >= 50) zone = 'CAUTION';
     else zone = 'STOP';
 
-    return { score, zone, physScore };
+    return { score, zone, physScore, caffeinePenalty };
   };
 
-  const { score, zone, physScore } = calculateScore();
+  const { score, zone, physScore, caffeinePenalty } = calculateScore();
 
   const isFormValid = () => {
     if (!stakes) return false;
@@ -164,7 +169,8 @@ const PreSession: React.FC = () => {
         physical_prep_water: readinessPhysicalPrep.water,
         physical_prep_food: readinessPhysicalPrep.food,
         physical_prep_stretch: readinessPhysicalPrep.stretch,
-        physical_prep_caffeine: readinessPhysicalPrep.caffeine,
+        caffeine_intake: caffeineIntake,
+        caffeine_penalty: caffeinePenalty || 0,
         phys_score: physScore || 0,
         a_game_score: score,
         readiness_zone: zone,
@@ -365,12 +371,14 @@ const PreSession: React.FC = () => {
             mentalClarity={readinessClarity}
             emotionalStability={readinessEmotions}
             physicalPrep={readinessPhysicalPrep}
+            caffeineIntake={caffeineIntake}
             skipCheck={skipReadinessCheck}
             onSleepQualityChange={setReadinessSleep}
             onEnergyLevelChange={setReadinessEnergy}
             onMentalClarityChange={setReadinessClarity}
             onEmotionalStabilityChange={setReadinessEmotions}
             onPhysicalPrepChange={setReadinessPhysicalPrep}
+            onCaffeineIntakeChange={setCaffeineIntake}
             onSkipCheckChange={setSkipReadinessCheck}
           />
 
