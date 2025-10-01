@@ -17,6 +17,17 @@ export interface PreSessionProtocol {
   game_type: string;
   stakes_or_buyin: string;
   planned_duration: string;
+  sleep_quality_score?: number;
+  energy_level_readiness?: number;
+  mental_clarity?: number;
+  emotional_stability?: number;
+  physical_prep_water?: boolean;
+  physical_prep_food?: boolean;
+  physical_prep_stretch?: boolean;
+  physical_prep_caffeine?: boolean;
+  a_game_score?: number | null;
+  readiness_zone?: string | null;
+  skip_readiness_check?: boolean;
 }
 
 export const submitPreSessionProtocol = async (data: PreSessionProtocol) => {

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, Brain, Coffee, Battery, Moon, Activity, Target, Edit2, X, Dumbbell, AlertCircle, Clock } from 'lucide-react';
+import { CheckCircle, Brain, Coffee, Battery, Moon, Activity, Target, CreditCard as Edit2, X, Dumbbell, AlertCircle, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import TrainingCard from '../components/training/TrainingCard';
+import AGameReadinessCheck from '../components/session/AGameReadinessCheck';
 import { usePreSession } from '../hooks/usePreSession';
 import { PreSessionProtocol } from '../lib/api/preSession';
 
@@ -29,13 +30,48 @@ const PreSession: React.FC = () => {
   const [showMeditationSuggestion, setShowMeditationSuggestion] = useState(false);
   const [isPhysicallyReady, setIsPhysicallyReady] = useState(false);
 
+  const [readinessSleep, setReadinessSleep] = useState(0);
+  const [readinessEnergy, setReadinessEnergy] = useState(0);
+  const [readinessClarity, setReadinessClarity] = useState(0);
+  const [readinessEmotions, setReadinessEmotions] = useState(0);
+  const [readinessPhysicalPrep, setReadinessPhysicalPrep] = useState({
+    water: false,
+    food: false,
+    stretch: false,
+    caffeine: false,
+  });
+  const [skipReadinessCheck, setSkipReadinessCheck] = useState(false);
+
   const navigate = useNavigate();
   const { submit, loading, error } = usePreSession();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
+      const physicalPrepScore =
+        (readinessPhysicalPrep.water ? 2.5 : 0) +
+        (readinessPhysicalPrep.food ? 2.5 : 0) +
+        (readinessPhysicalPrep.stretch ? 2.5 : 0) +
+        (readinessPhysicalPrep.caffeine ? 2.5 : 0);
+
+      let aGameScore = null;
+      let readinessZone = null;
+
+      if (!skipReadinessCheck && readinessSleep > 0 && readinessEnergy > 0 && readinessClarity > 0 && readinessEmotions > 0) {
+        aGameScore = Math.round(
+          ((readinessSleep + readinessEnergy + readinessClarity + readinessEmotions + physicalPrepScore) / 5) * 10
+        );
+
+        if (aGameScore >= 70) {
+          readinessZone = 'GO';
+        } else if (aGameScore >= 50) {
+          readinessZone = 'CAUTION';
+        } else {
+          readinessZone = 'STOP';
+        }
+      }
+
       const protocolData: PreSessionProtocol = {
         long_term_goal: globalGoal,
         goal_meaning: globalGoalReason,
@@ -52,7 +88,18 @@ const PreSession: React.FC = () => {
         tilt_response: tiltPlan,
         game_type: gameType,
         stakes_or_buyin: stakes,
-        planned_duration: sessionLength
+        planned_duration: sessionLength,
+        sleep_quality_score: readinessSleep,
+        energy_level_readiness: readinessEnergy,
+        mental_clarity: readinessClarity,
+        emotional_stability: readinessEmotions,
+        physical_prep_water: readinessPhysicalPrep.water,
+        physical_prep_food: readinessPhysicalPrep.food,
+        physical_prep_stretch: readinessPhysicalPrep.stretch,
+        physical_prep_caffeine: readinessPhysicalPrep.caffeine,
+        a_game_score: aGameScore,
+        readiness_zone: readinessZone,
+        skip_readiness_check: skipReadinessCheck
       };
 
       await submit(protocolData);
@@ -503,9 +550,24 @@ const PreSession: React.FC = () => {
             </div>
           </div>
 
+          <AGameReadinessCheck
+            sleepQuality={readinessSleep}
+            energyLevel={readinessEnergy}
+            mentalClarity={readinessClarity}
+            emotionalStability={readinessEmotions}
+            physicalPrep={readinessPhysicalPrep}
+            skipCheck={skipReadinessCheck}
+            onSleepQualityChange={setReadinessSleep}
+            onEnergyLevelChange={setReadinessEnergy}
+            onMentalClarityChange={setReadinessClarity}
+            onEmotionalStabilityChange={setReadinessEmotions}
+            onPhysicalPrepChange={setReadinessPhysicalPrep}
+            onSkipCheckChange={setSkipReadinessCheck}
+          />
+
           <div className="flex justify-between">
-            <Link 
-              to="/" 
+            <Link
+              to="/"
               className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               Cancel
