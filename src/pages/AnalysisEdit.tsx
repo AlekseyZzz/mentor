@@ -286,18 +286,31 @@ const AnalysisEdit: React.FC = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Hand History
+              {handHistory && (
+                <span className="ml-2 text-xs text-gray-500">({handHistory.length} characters)</span>
+              )}
             </label>
-            <textarea
-              value={handHistory}
-              onChange={(e) => setHandHistory(e.target.value)}
-              placeholder="Paste hand history here..."
-              rows={8}
-              maxLength={10000}
-              className="w-full p-3 border border-gray-300 rounded-lg font-mono text-sm"
-            />
-            <div className="text-xs text-gray-500 mt-1">
-              {handHistory.length} / 10,000 characters
-            </div>
+            <details className="group">
+              <summary className="cursor-pointer list-none">
+                <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition-colors">
+                  <span className="group-open:rotate-90 transition-transform">▶</span>
+                  {handHistory ? 'Click to view/edit hand history' : 'Click to add hand history'}
+                </div>
+              </summary>
+              <div className="mt-3">
+                <textarea
+                  value={handHistory}
+                  onChange={(e) => setHandHistory(e.target.value)}
+                  placeholder="Paste hand history here..."
+                  rows={8}
+                  maxLength={10000}
+                  className="w-full p-3 border border-gray-300 rounded-lg font-mono text-sm"
+                />
+                <div className="text-xs text-gray-500 mt-1">
+                  {handHistory.length} / 10,000 characters
+                </div>
+              </div>
+            </details>
           </div>
 
           <div>

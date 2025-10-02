@@ -197,9 +197,16 @@ const AnalysisView: React.FC = () => {
               {hand.front.hand_history && (
                 <div>
                   <h3 className="text-sm font-semibold text-gray-700 mb-3">Hand History</h3>
-                  <pre className="bg-gray-50 p-4 rounded-lg text-sm font-mono whitespace-pre-wrap border border-gray-200">
-                    {hand.front.hand_history}
-                  </pre>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(hand.front.hand_history);
+                      alert('Hand history copied to clipboard!');
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition-colors"
+                  >
+                    <Copy size={16} />
+                    Copy Hand History
+                  </button>
                 </div>
               )}
 
