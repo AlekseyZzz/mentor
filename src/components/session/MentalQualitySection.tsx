@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Plus, X } from 'lucide-react';
 import ProfileTraits from './ProfileTraits';
 
 interface MentalQualitySectionProps {
@@ -37,6 +38,7 @@ const MentalQualitySection: React.FC<MentalQualitySectionProps> = ({
   cGameMomentNote,
   onCGameMomentNoteChange
 }) => {
+  const [customReasons, setCustomReasons] = useState<string[]>([]);
   const safeReasons = Array.isArray(nonAGameReasons) ? nonAGameReasons : [];
 
   const handleReasonChange = (reason: string) => {
@@ -45,6 +47,20 @@ const MentalQualitySection: React.FC<MentalQualitySectionProps> = ({
     } else {
       onNonAGameReasonsChange([...safeReasons, reason]);
     }
+  };
+
+  const handleAddCustomReason = () => {
+    if (otherReason.trim() && !customReasons.includes(otherReason.trim())) {
+      const newReason = otherReason.trim();
+      setCustomReasons(prev => [...prev, newReason]);
+      onNonAGameReasonsChange([...safeReasons, newReason]);
+      onOtherReasonChange('');
+    }
+  };
+
+  const handleRemoveCustomReason = (reasonToRemove: string) => {
+    setCustomReasons(prev => prev.filter(r => r !== reasonToRemove));
+    onNonAGameReasonsChange(safeReasons.filter(r => r !== reasonToRemove));
   };
 
   return (
@@ -104,14 +120,57 @@ const MentalQualitySection: React.FC<MentalQualitySectionProps> = ({
                   <span className="ml-2 text-sm text-gray-700">{reason}</span>
                 </label>
               ))}
-              <div>
-                <input
-                  type="text"
-                  value={otherReason}
-                  onChange={(e) => onOtherReasonChange(e.target.value)}
-                  placeholder="Other reason..."
-                  className="mt-2 w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
-                />
+              <div className="mt-3">
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={otherReason}
+                    onChange={(e) => onOtherReasonChange(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleAddCustomReason();
+                      }
+                    }}
+                    placeholder="Other reason..."
+                    className="flex-1 p-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleAddCustomReason();
+                    }}
+                    disabled={!otherReason.trim()}
+                    className={`px-3 py-2 bg-blue-600 text-white rounded-md text-sm flex items-center ${
+                      !otherReason.trim() ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'
+                    }`}
+                  >
+                    <Plus size={16} className="mr-1" />
+                    Add
+                  </button>
+                </div>
+                {customReasons.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {customReasons.map((reason, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm group"
+                      >
+                        <span>{reason}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCustomReason(reason)}
+                          className="text-blue-400 hover:text-blue-600 opacity-70 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
