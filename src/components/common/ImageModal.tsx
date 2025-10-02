@@ -9,6 +9,12 @@ interface NotePanel {
   position: { x: number; y: number };
 }
 
+export interface ScreenshotNote {
+  id: string;
+  content: string;
+  position?: { x: number; y: number };
+}
+
 interface ImageModalProps {
   imageUrl: string;
   onClose: () => void;
@@ -16,8 +22,8 @@ interface ImageModalProps {
   images?: string[];
   currentIndex?: number;
   onNavigate?: (index: number) => void;
-  note?: string;
-  onNoteUpdate?: (note: string) => void;
+  notes?: ScreenshotNote[];
+  onNotesUpdate?: (notes: ScreenshotNote[]) => void;
   canEdit?: boolean;
 }
 
@@ -39,35 +45,37 @@ const ImageModal: React.FC<ImageModalProps> = ({
   images = [],
   currentIndex = 0,
   onNavigate,
-  note = '',
-  onNoteUpdate,
+  notes = [],
+  onNotesUpdate,
   canEdit = false
 }) => {
-  const [notePanels, setNotePanels] = useState<NotePanel[]>([
-    {
-      id: '1',
-      content: note || '',
-      color: HEADER_COLORS[0],
-      position: { x: window.innerWidth - 420, y: 100 }
-    }
-  ]);
-  const [initializedNote, setInitializedNote] = useState<string>(note || '');
+  const [notePanels, setNotePanels] = useState<NotePanel[]>([]);
 
   const hasMultipleImages = images.length > 1;
   const canGoPrevious = hasMultipleImages && currentIndex > 0;
   const canGoNext = hasMultipleImages && currentIndex < images.length - 1;
 
   useEffect(() => {
-    if (note !== initializedNote) {
+    if (notes.length === 0) {
       setNotePanels([{
         id: '1',
-        content: note || '',
+        content: '',
         color: HEADER_COLORS[0],
         position: { x: window.innerWidth - 420, y: 100 }
       }]);
-      setInitializedNote(note || '');
+    } else {
+      const panels = notes.map((note, index) => ({
+        id: note.id,
+        content: note.content,
+        color: HEADER_COLORS[index % HEADER_COLORS.length],
+        position: note.position || {
+          x: window.innerWidth - 420 - (index * 30),
+          y: 100 + (index * 30)
+        }
+      }));
+      setNotePanels(panels);
     }
-  }, [imageUrl]);
+  }, [imageUrl, notes]);
 
   const handleAddNote = () => {
     const randomColor = HEADER_COLORS[Math.floor(Math.random() * HEADER_COLORS.length)];
@@ -85,19 +93,25 @@ const ImageModal: React.FC<ImageModalProps> = ({
 
   const handleDeleteNote = (id: string) => {
     if (notePanels.length === 1) {
-      setNotePanels([{
-        ...notePanels[0],
-        content: ''
-      }]);
-      if (onNoteUpdate) {
-        onNoteUpdate('');
+      const clearedPanel = { ...notePanels[0], content: '' };
+      setNotePanels([clearedPanel]);
+      if (onNotesUpdate) {
+        onNotesUpdate([{
+          id: clearedPanel.id,
+          content: '',
+          position: clearedPanel.position
+        }]);
       }
     } else {
       const updatedPanels = notePanels.filter(panel => panel.id !== id);
       setNotePanels(updatedPanels);
-      if (onNoteUpdate) {
-        const combinedNotes = updatedPanels.map(p => p.content).filter(c => c).join('\n\n---\n\n');
-        onNoteUpdate(combinedNotes);
+      if (onNotesUpdate) {
+        const updatedNotes = updatedPanels.map(p => ({
+          id: p.id,
+          content: p.content,
+          position: p.position
+        }));
+        onNotesUpdate(updatedNotes);
       }
     }
   };
@@ -108,9 +122,13 @@ const ImageModal: React.FC<ImageModalProps> = ({
     );
     setNotePanels(updatedPanels);
 
-    if (onNoteUpdate) {
-      const combinedNotes = updatedPanels.map(p => p.content).filter(c => c).join('\n\n---\n\n');
-      onNoteUpdate(combinedNotes);
+    if (onNotesUpdate) {
+      const updatedNotes = updatedPanels.map(p => ({
+        id: p.id,
+        content: p.content,
+        position: p.position
+      }));
+      onNotesUpdate(updatedNotes);
     }
   };
 

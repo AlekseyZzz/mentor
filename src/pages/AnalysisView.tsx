@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, CreditCard as Edit2, Trash2, Copy, ExternalLink } from 'lucide-react';
 import { getHandNoteById, deleteHandNote, duplicateHandNote, HandNote } from '../lib/api/handNotes';
-import ImageModal from '../components/common/ImageModal';
+import ImageModal, { ScreenshotNote } from '../components/common/ImageModal';
 import { getScreenshotNotesByHandId } from '../lib/api/screenshotNotes';
 
 const AnalysisView: React.FC = () => {
@@ -15,7 +15,7 @@ const AnalysisView: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
   const [allImages, setAllImages] = useState<string[]>([]);
-  const [screenshotNotes, setScreenshotNotes] = useState<Map<string, string>>(new Map());
+  const [screenshotNotes, setScreenshotNotes] = useState<Map<string, ScreenshotNote[]>>(new Map());
 
   useEffect(() => {
     if (id) {
@@ -32,9 +32,14 @@ const AnalysisView: React.FC = () => {
       setHand(data);
 
       const notes = await getScreenshotNotesByHandId(id);
-      const notesMap = new Map();
+      const notesMap = new Map<string, ScreenshotNote[]>();
       notes.forEach(note => {
-        notesMap.set(note.screenshot_url, note.note);
+        const existing = notesMap.get(note.screenshot_url) || [];
+        existing.push({
+          id: note.id,
+          content: note.note
+        });
+        notesMap.set(note.screenshot_url, existing);
       });
       setScreenshotNotes(notesMap);
     } catch (error) {
@@ -412,7 +417,7 @@ const AnalysisView: React.FC = () => {
             setSelectedImageIndex(index);
             setSelectedImage(allImages[index]);
           }}
-          note={screenshotNotes.get(selectedImage) || ''}
+          notes={screenshotNotes.get(selectedImage) || []}
           canEdit={false}
         />
       )}

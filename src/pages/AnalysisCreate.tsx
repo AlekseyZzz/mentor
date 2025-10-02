@@ -5,7 +5,7 @@ import { createHandNote, uploadHandScreenshot, CreateHandNoteData } from '../lib
 import { createScreenshotNote } from '../lib/api/screenshotNotes';
 import { TILT_TYPES, GAME_STATES } from '../lib/constants/analysisТags';
 import TagSelector from '../components/common/TagSelector';
-import ImageModal from '../components/common/ImageModal';
+import ImageModal, { ScreenshotNote } from '../components/common/ImageModal';
 import ScreenshotNoteModal from '../components/common/ScreenshotNoteModal';
 
 const AnalysisCreate: React.FC = () => {
@@ -36,7 +36,7 @@ const AnalysisCreate: React.FC = () => {
   const [allImages, setAllImages] = useState<string[]>([]);
   const [markForReview, setMarkForReview] = useState(false);
   const [pendingScreenshotForNote, setPendingScreenshotForNote] = useState<{ url: string; type: 'hand' | 'wizard' } | null>(null);
-  const [screenshotNotes, setScreenshotNotes] = useState<Map<string, string>>(new Map());
+  const [screenshotNotes, setScreenshotNotes] = useState<Map<string, ScreenshotNote[]>>(new Map());
 
   useEffect(() => {
     const handlePaste = async (e: ClipboardEvent) => {
@@ -100,7 +100,11 @@ const AnalysisCreate: React.FC = () => {
   const handleSaveScreenshotNote = (note: string) => {
     if (pendingScreenshotForNote) {
       const newNotes = new Map(screenshotNotes);
-      newNotes.set(pendingScreenshotForNote.url, note);
+      const screenshotNote: ScreenshotNote = {
+        id: Date.now().toString(),
+        content: note
+      };
+      newNotes.set(pendingScreenshotForNote.url, [screenshotNote]);
       setScreenshotNotes(newNotes);
     }
     setPendingScreenshotForNote(null);
@@ -110,9 +114,9 @@ const AnalysisCreate: React.FC = () => {
     setPendingScreenshotForNote(null);
   };
 
-  const handleUpdateScreenshotNote = (url: string, note: string) => {
+  const handleUpdateScreenshotNotes = (url: string, notes: ScreenshotNote[]) => {
     const newNotes = new Map(screenshotNotes);
-    newNotes.set(url, note);
+    newNotes.set(url, notes);
     setScreenshotNotes(newNotes);
   };
 
@@ -216,15 +220,18 @@ const AnalysisCreate: React.FC = () => {
       ];
 
       for (const screenshot of allScreenshots) {
-        const note = screenshotNotes.get(screenshot.url);
-        if (note && note.trim().length > 0) {
-          await createScreenshotNote({
-            hand_note_id: handNote.id,
-            screenshot_url: screenshot.url,
-            note: note,
-            screenshot_type: screenshot.type,
-            display_order: screenshot.order
-          });
+        const notes = screenshotNotes.get(screenshot.url) || [];
+        for (let i = 0; i < notes.length; i++) {
+          const note = notes[i];
+          if (note.content && note.content.trim().length > 0) {
+            await createScreenshotNote({
+              hand_note_id: handNote.id,
+              screenshot_url: screenshot.url,
+              note: note.content,
+              screenshot_type: screenshot.type,
+              display_order: screenshot.order * 100 + i
+            });
+          }
         }
       }
 
@@ -681,8 +688,8 @@ const AnalysisCreate: React.FC = () => {
             setSelectedImageIndex(index);
             setSelectedImage(allImages[index]);
           }}
-          note={screenshotNotes.get(selectedImage) || ''}
-          onNoteUpdate={(note) => handleUpdateScreenshotNote(selectedImage, note)}
+          notes={screenshotNotes.get(selectedImage) || []}
+          onNotesUpdate={(notes) => handleUpdateScreenshotNotes(selectedImage, notes)}
           canEdit={true}
         />
       )}
