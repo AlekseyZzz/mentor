@@ -50,6 +50,7 @@ const ImageModal: React.FC<ImageModalProps> = ({
   canEdit = false
 }) => {
   const [notePanels, setNotePanels] = useState<NotePanel[]>([]);
+  const [initialized, setInitialized] = useState(false);
 
   const hasMultipleImages = images.length > 1;
   const canGoPrevious = hasMultipleImages && currentIndex > 0;
@@ -75,7 +76,8 @@ const ImageModal: React.FC<ImageModalProps> = ({
       }));
       setNotePanels(panels);
     }
-  }, [imageUrl, notes]);
+    setInitialized(true);
+  }, [imageUrl]);
 
   const handleAddNote = () => {
     const randomColor = HEADER_COLORS[Math.floor(Math.random() * HEADER_COLORS.length)];
