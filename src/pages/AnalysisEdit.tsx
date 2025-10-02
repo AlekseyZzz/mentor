@@ -5,6 +5,8 @@ import { getHandNoteById, updateHandNote, uploadHandScreenshot, UpdateHandNoteDa
 import { TILT_TYPES, GAME_STATES } from '../lib/constants/analysisТags';
 import TagSelector from '../components/common/TagSelector';
 import ImageModal from '../components/common/ImageModal';
+import ScreenshotNoteModal from '../components/common/ScreenshotNoteModal';
+import { getScreenshotNotesByHandId, createScreenshotNote, updateScreenshotNote as updateScreenshotNoteApi } from '../lib/api/screenshotNotes';
 
 const AnalysisEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -27,6 +29,8 @@ const AnalysisEdit: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
   const [allImages, setAllImages] = useState<string[]>([]);
+  const [pendingScreenshotForNote, setPendingScreenshotForNote] = useState<{ url: string; type: 'hand' | 'wizard' } | null>(null);
+  const [screenshotNotes, setScreenshotNotes] = useState<Map<string, { id?: string; note: string }>>(new Map());
   const [focus, setFocus] = useState<number | undefined>(undefined);
   const [confidence, setConfidence] = useState<number | undefined>(undefined);
   const [impulsivity, setImpulsivity] = useState<number | undefined>(undefined);
@@ -66,6 +70,13 @@ const AnalysisEdit: React.FC = () => {
       setAdaptiveThought(hand.back.adaptive_thought);
       setNextTimePlan(hand.back.next_time_plan);
       setMarkForReview(hand.meta.mark_for_review || false);
+
+      const notes = await getScreenshotNotesByHandId(id);
+      const notesMap = new Map();
+      notes.forEach(note => {
+        notesMap.set(note.screenshot_url, { id: note.id, note: note.note });
+      });
+      setScreenshotNotes(notesMap);
     } catch (error) {
       console.error('Failed to load hand:', error);
       navigate('/analysis');
@@ -123,12 +134,75 @@ const AnalysisEdit: React.FC = () => {
         } else {
           setWizardScreenshots(prev => [...prev, url]);
         }
+
+        setPendingScreenshotForNote({ url, type });
       } catch (error) {
         console.error('Upload failed:', error);
         alert(`Failed to upload ${file.name}`);
       }
     }
     setUploadingScreenshot(false);
+  };
+
+  const handleSaveScreenshotNote = async (note: string) => {
+    if (pendingScreenshotForNote && id) {
+      try {
+        const allScreenshots = [...screenshots, ...wizardScreenshots];
+        const displayOrder = allScreenshots.indexOf(pendingScreenshotForNote.url);
+
+        const savedNote = await createScreenshotNote({
+          hand_note_id: id,
+          screenshot_url: pendingScreenshotForNote.url,
+          note,
+          screenshot_type: pendingScreenshotForNote.type,
+          display_order: displayOrder >= 0 ? displayOrder : 0
+        });
+
+        const newNotes = new Map(screenshotNotes);
+        newNotes.set(pendingScreenshotForNote.url, { id: savedNote.id, note });
+        setScreenshotNotes(newNotes);
+      } catch (error) {
+        console.error('Failed to save screenshot note:', error);
+      }
+    }
+    setPendingScreenshotForNote(null);
+  };
+
+  const handleSkipScreenshotNote = () => {
+    setPendingScreenshotForNote(null);
+  };
+
+  const handleUpdateScreenshotNote = async (url: string, note: string) => {
+    const existing = screenshotNotes.get(url);
+
+    try {
+      if (existing?.id) {
+        await updateScreenshotNoteApi(existing.id, note);
+      } else if (id) {
+        const allScreenshots = [...screenshots, ...wizardScreenshots];
+        const displayOrder = allScreenshots.indexOf(url);
+        const type = screenshots.includes(url) ? 'hand' : 'wizard';
+
+        const savedNote = await createScreenshotNote({
+          hand_note_id: id,
+          screenshot_url: url,
+          note,
+          screenshot_type: type,
+          display_order: displayOrder >= 0 ? displayOrder : 0
+        });
+
+        const newNotes = new Map(screenshotNotes);
+        newNotes.set(url, { id: savedNote.id, note });
+        setScreenshotNotes(newNotes);
+        return;
+      }
+
+      const newNotes = new Map(screenshotNotes);
+      newNotes.set(url, { ...existing, note });
+      setScreenshotNotes(newNotes);
+    } catch (error) {
+      console.error('Failed to update screenshot note:', error);
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'hand' | 'wizard') => {
@@ -686,6 +760,17 @@ const AnalysisEdit: React.FC = () => {
             setSelectedImageIndex(index);
             setSelectedImage(allImages[index]);
           }}
+          note={screenshotNotes.get(selectedImage)?.note || ''}
+          onNoteUpdate={(note) => handleUpdateScreenshotNote(selectedImage, note)}
+          canEdit={true}
+        />
+      )}
+
+      {pendingScreenshotForNote && (
+        <ScreenshotNoteModal
+          screenshotUrl={pendingScreenshotForNote.url}
+          onSave={handleSaveScreenshotNote}
+          onSkip={handleSkipScreenshotNote}
         />
       )}
     </div>

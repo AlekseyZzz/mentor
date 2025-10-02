@@ -5,6 +5,7 @@ import { createHandNote, uploadHandScreenshot, CreateHandNoteData } from '../lib
 import { TILT_TYPES, GAME_STATES } from '../lib/constants/analysisТags';
 import TagSelector from '../components/common/TagSelector';
 import ImageModal from '../components/common/ImageModal';
+import ScreenshotNoteModal from '../components/common/ScreenshotNoteModal';
 
 const AnalysisCreate: React.FC = () => {
   const navigate = useNavigate();
@@ -33,6 +34,8 @@ const AnalysisCreate: React.FC = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
   const [allImages, setAllImages] = useState<string[]>([]);
   const [markForReview, setMarkForReview] = useState(false);
+  const [pendingScreenshotForNote, setPendingScreenshotForNote] = useState<{ url: string; type: 'hand' | 'wizard' } | null>(null);
+  const [screenshotNotes, setScreenshotNotes] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     const handlePaste = async (e: ClipboardEvent) => {
@@ -83,12 +86,33 @@ const AnalysisCreate: React.FC = () => {
         } else {
           setWizardScreenshots(prev => [...prev, url]);
         }
+
+        setPendingScreenshotForNote({ url, type });
       } catch (error) {
         console.error('Upload failed:', error);
         alert(`Failed to upload ${file.name}`);
       }
     }
     setUploadingScreenshot(false);
+  };
+
+  const handleSaveScreenshotNote = (note: string) => {
+    if (pendingScreenshotForNote) {
+      const newNotes = new Map(screenshotNotes);
+      newNotes.set(pendingScreenshotForNote.url, note);
+      setScreenshotNotes(newNotes);
+    }
+    setPendingScreenshotForNote(null);
+  };
+
+  const handleSkipScreenshotNote = () => {
+    setPendingScreenshotForNote(null);
+  };
+
+  const handleUpdateScreenshotNote = (url: string, note: string) => {
+    const newNotes = new Map(screenshotNotes);
+    newNotes.set(url, note);
+    setScreenshotNotes(newNotes);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'hand' | 'wizard') => {
@@ -637,6 +661,17 @@ const AnalysisCreate: React.FC = () => {
             setSelectedImageIndex(index);
             setSelectedImage(allImages[index]);
           }}
+          note={screenshotNotes.get(selectedImage) || ''}
+          onNoteUpdate={(note) => handleUpdateScreenshotNote(selectedImage, note)}
+          canEdit={true}
+        />
+      )}
+
+      {pendingScreenshotForNote && (
+        <ScreenshotNoteModal
+          screenshotUrl={pendingScreenshotForNote.url}
+          onSave={handleSaveScreenshotNote}
+          onSkip={handleSkipScreenshotNote}
         />
       )}
     </div>

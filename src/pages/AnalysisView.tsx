@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, CreditCard as Edit2, Trash2, Copy, ExternalLink } from 'lucide-react';
 import { getHandNoteById, deleteHandNote, duplicateHandNote, HandNote } from '../lib/api/handNotes';
 import ImageModal from '../components/common/ImageModal';
+import { getScreenshotNotesByHandId } from '../lib/api/screenshotNotes';
 
 const AnalysisView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -14,6 +15,7 @@ const AnalysisView: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
   const [allImages, setAllImages] = useState<string[]>([]);
+  const [screenshotNotes, setScreenshotNotes] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     if (id) {
@@ -28,6 +30,13 @@ const AnalysisView: React.FC = () => {
     try {
       const data = await getHandNoteById(id);
       setHand(data);
+
+      const notes = await getScreenshotNotesByHandId(id);
+      const notesMap = new Map();
+      notes.forEach(note => {
+        notesMap.set(note.screenshot_url, note.note);
+      });
+      setScreenshotNotes(notesMap);
     } catch (error) {
       console.error('Failed to load hand:', error);
       navigate('/analysis');
@@ -403,6 +412,8 @@ const AnalysisView: React.FC = () => {
             setSelectedImageIndex(index);
             setSelectedImage(allImages[index]);
           }}
+          note={screenshotNotes.get(selectedImage) || ''}
+          canEdit={false}
         />
       )}
     </div>
