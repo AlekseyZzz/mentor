@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { X, ChevronLeft, ChevronRight, CreditCard as Edit2, Save } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import DraggableNotePanel from './DraggableNotePanel';
 
 interface ImageModalProps {
   imageUrl: string;
@@ -27,20 +28,6 @@ const ImageModal: React.FC<ImageModalProps> = ({
   const hasMultipleImages = images.length > 1;
   const canGoPrevious = hasMultipleImages && currentIndex > 0;
   const canGoNext = hasMultipleImages && currentIndex < images.length - 1;
-  const [isEditingNote, setIsEditingNote] = useState(false);
-  const [editedNote, setEditedNote] = useState(note);
-
-  useEffect(() => {
-    setEditedNote(note);
-    setIsEditingNote(false);
-  }, [note, currentIndex]);
-
-  const handleSaveNote = () => {
-    if (onNoteUpdate) {
-      onNoteUpdate(editedNote);
-    }
-    setIsEditingNote(false);
-  };
 
   const handlePrevious = () => {
     if (canGoPrevious && onNavigate) {
@@ -131,7 +118,7 @@ const ImageModal: React.FC<ImageModalProps> = ({
       )}
 
       <div
-        className="relative flex gap-4 max-w-7xl max-h-full"
+        className="relative max-w-7xl max-h-full"
         onClick={(e) => e.stopPropagation()}
       >
         <img
@@ -139,54 +126,15 @@ const ImageModal: React.FC<ImageModalProps> = ({
           alt={alt}
           className="max-w-full max-h-[90vh] object-contain rounded-lg"
         />
-
-        {(note || canEdit) && (
-          <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-xl p-4 max-w-xs w-full self-start max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="font-semibold text-gray-900">Notes</h4>
-              {canEdit && !isEditingNote && (
-                <button
-                  onClick={() => setIsEditingNote(true)}
-                  className="p-1 hover:bg-gray-100 rounded transition-colors"
-                  title="Edit note"
-                >
-                  <Edit2 size={16} />
-                </button>
-              )}
-              {canEdit && isEditingNote && (
-                <button
-                  onClick={handleSaveNote}
-                  className="p-1 hover:bg-gray-100 rounded transition-colors text-blue-600"
-                  title="Save note"
-                >
-                  <Save size={16} />
-                </button>
-              )}
-            </div>
-
-            {isEditingNote ? (
-              <textarea
-                value={editedNote}
-                onChange={(e) => setEditedNote(e.target.value)}
-                placeholder="Add your thoughts about this screenshot..."
-                rows={6}
-                maxLength={500}
-                className="w-full p-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            ) : (
-              <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                {note || (canEdit && 'Click edit to add notes')}
-              </p>
-            )}
-
-            {isEditingNote && (
-              <div className="text-xs text-gray-500 mt-2">
-                {editedNote.length} / 500 characters
-              </div>
-            )}
-          </div>
-        )}
       </div>
+
+      {(note || canEdit) && (
+        <DraggableNotePanel
+          note={note}
+          onNoteUpdate={onNoteUpdate}
+          canEdit={canEdit}
+        />
+      )}
     </div>
   );
 };
