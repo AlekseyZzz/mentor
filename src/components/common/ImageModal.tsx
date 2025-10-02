@@ -26,7 +26,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ imageUrl, onClose, alt = 'Scree
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black p-4"
       onClick={onClose}
     >
       <button
