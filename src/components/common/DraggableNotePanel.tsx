@@ -130,6 +130,7 @@ const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({
       onKeyDown={(e) => e.stopPropagation()}
       onKeyUp={(e) => e.stopPropagation()}
       onKeyPress={(e) => e.stopPropagation()}
+      onWheel={(e) => e.stopPropagation()}
     >
       <div
         className={`flex items-center justify-between p-3 bg-gradient-to-r ${headerColor} text-white cursor-grab active:cursor-grabbing select-none`}
@@ -171,6 +172,7 @@ const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({
         className="p-4 overflow-y-auto note-content cursor-text"
         style={{ height: `calc(100% - 52px)` }}
         onClick={handleContentClick}
+        onWheel={(e) => e.stopPropagation()}
       >
         {canEdit ? (
           <div>
@@ -181,6 +183,7 @@ const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({
               onKeyDown={(e) => e.stopPropagation()}
               onKeyUp={(e) => e.stopPropagation()}
               onKeyPress={(e) => e.stopPropagation()}
+              onWheel={(e) => e.stopPropagation()}
               placeholder="Click here to add notes about this screenshot..."
               maxLength={500}
               className="w-full h-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none note-textarea"
