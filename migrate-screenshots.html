@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Migrate Screenshots to R2</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+        .status.info {
+            background: #dbeafe;
+            color: #1e40af;
+            display: block;
+        }
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+            display: block;
+        }
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            display: block;
+        }
+        .results {
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Migrate Screenshots to Cloudflare R2</h1>
+        <p>This will migrate all screenshots from Supabase Storage to Cloudflare R2 and update the database URLs.</p>
+
+        <button id="migrateBtn" onclick="runMigration()">Start Migration</button>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://0ec90b57d6e95fcbda19832f.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJib2x0IiwicmVmIjoiMGVjOTBiNTdkNmU5NWZjYmRhMTk4MzJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4ODE1NzQsImV4cCI6MTc1ODg4MTU3NH0.9I8-U0x86Ak8t2DGaIk0HfvTSLsAyzdnz-Nw00mMkKw';
+
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('status');
+            statusEl.className = `status ${type}`;
+            statusEl.innerHTML = message;
+        }
+
+        async function runMigration() {
+            const btn = document.getElementById('migrateBtn');
+            btn.disabled = true;
+
+            showStatus('Migration in progress... This may take a few minutes.', 'info');
+
+            try {
+                const response = await fetch(
+                    `${SUPABASE_URL}/functions/v1/migrate-screenshots-to-r2`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                            'Content-Type': 'application/json',
+                        },
+                    }
+                );
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Migration failed');
+                }
+
+                const result = await response.json();
+
+                let resultsHtml = '<div class="results">';
+                resultsHtml += `<strong>Hand Analysis:</strong><br>`;
+                resultsHtml += `Total: ${result.results.handAnalysis.total}<br>`;
+                resultsHtml += `Migrated: ${result.results.handAnalysis.migrated}<br>`;
+                resultsHtml += `Failed: ${result.results.handAnalysis.failed}<br><br>`;
+
+                resultsHtml += `<strong>Screenshot Notes:</strong><br>`;
+                resultsHtml += `Total: ${result.results.screenshotNotes.total}<br>`;
+                resultsHtml += `Migrated: ${result.results.screenshotNotes.migrated}<br>`;
+                resultsHtml += `Failed: ${result.results.screenshotNotes.failed}`;
+                resultsHtml += '</div>';
+
+                showStatus(
+                    `<strong>Migration completed successfully!</strong>${resultsHtml}`,
+                    'success'
+                );
+            } catch (error) {
+                console.error('Migration error:', error);
+                showStatus(
+                    `<strong>Migration failed:</strong><br>${error.message}`,
+                    'error'
+                );
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
