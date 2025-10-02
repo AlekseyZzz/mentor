@@ -13,11 +13,12 @@ const ProfileTraits: React.FC<ProfileTraitsProps> = ({ profileType, profileName 
 
   const handleAddTrait = (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (!newTrait.trim()) return;
 
     // Add to local state
     setLocalTraits(prev => [...prev, newTrait.trim()]);
-    
+
     // Clear input
     setNewTrait('');
   };
