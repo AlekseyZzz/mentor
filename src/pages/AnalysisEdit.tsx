@@ -6,7 +6,7 @@ import { TILT_TYPES, GAME_STATES } from '../lib/constants/analysisТags';
 import TagSelector from '../components/common/TagSelector';
 import ImageModal, { ScreenshotNote } from '../components/common/ImageModal';
 import ScreenshotNoteModal from '../components/common/ScreenshotNoteModal';
-import { getScreenshotNotesByHandId, createScreenshotNote, updateScreenshotNote as updateScreenshotNoteApi } from '../lib/api/screenshotNotes';
+import { getScreenshotNotesByHandId, createScreenshotNote, updateScreenshotNote as updateScreenshotNoteApi, deleteScreenshotNote } from '../lib/api/screenshotNotes';
 
 const AnalysisEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -193,17 +193,24 @@ const AnalysisEdit: React.FC = () => {
       const type = screenshots.includes(url) ? 'hand' : 'wizard';
 
       const updatedNotes: (ScreenshotNote & { dbId?: string })[] = [];
+      const processedDbIds = new Set<string>();
 
       for (let i = 0; i < notes.length; i++) {
         const note = notes[i];
         const existingNote = existingNotes.find(n => n.id === note.id);
 
         if (existingNote?.dbId) {
-          await updateScreenshotNoteApi(existingNote.dbId, note.content);
-          updatedNotes.push({
-            ...note,
-            dbId: existingNote.dbId
-          });
+          processedDbIds.add(existingNote.dbId);
+
+          if (note.content && note.content.trim().length > 0) {
+            await updateScreenshotNoteApi(existingNote.dbId, note.content);
+            updatedNotes.push({
+              ...note,
+              dbId: existingNote.dbId
+            });
+          } else {
+            await deleteScreenshotNote(existingNote.dbId);
+          }
         } else if (note.content && note.content.trim().length > 0) {
           const savedNote = await createScreenshotNote({
             hand_note_id: id,
@@ -216,6 +223,12 @@ const AnalysisEdit: React.FC = () => {
             ...note,
             dbId: savedNote.id
           });
+        }
+      }
+
+      for (const existingNote of existingNotes) {
+        if (existingNote.dbId && !processedDbIds.has(existingNote.dbId)) {
+          await deleteScreenshotNote(existingNote.dbId);
         }
       }
 
