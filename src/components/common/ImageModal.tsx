@@ -209,19 +209,6 @@ const ImageModal: React.FC<ImageModalProps> = ({
         />
       </div>
 
-      {canEdit && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleAddNote();
-          }}
-          className="fixed top-4 left-1/2 -translate-x-1/2 p-2 text-white bg-green-600 hover:bg-green-700 rounded-full transition-colors z-10 shadow-lg"
-          title="Add new note"
-        >
-          <Plus size={24} />
-        </button>
-      )}
-
       {notePanels.map((panel) => (
         <DraggableNotePanel
           key={panel.id}
@@ -229,6 +216,7 @@ const ImageModal: React.FC<ImageModalProps> = ({
           onNoteUpdate={(content) => handleNoteUpdate(panel.id, content)}
           canEdit={canEdit}
           onDelete={() => handleDeleteNote(panel.id)}
+          onAddNote={canEdit ? handleAddNote : undefined}
           headerColor={panel.color}
           initialPosition={panel.position}
         />

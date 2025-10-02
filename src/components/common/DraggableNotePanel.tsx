@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { GripVertical, X } from 'lucide-react';
+import { GripVertical, X, Plus } from 'lucide-react';
 
 interface DraggableNotePanelProps {
   note: string;
   onNoteUpdate?: (note: string) => void;
   canEdit: boolean;
   onDelete?: () => void;
+  onAddNote?: () => void;
   headerColor?: string;
   initialPosition?: { x: number; y: number };
 }
@@ -15,6 +16,7 @@ const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({
   onNoteUpdate,
   canEdit,
   onDelete,
+  onAddNote,
   headerColor = 'from-blue-500 to-blue-600',
   initialPosition
 }) => {
@@ -134,18 +136,32 @@ const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({
           <GripVertical size={18} />
           <h4 className="font-semibold">Screenshot Notes</h4>
         </div>
-        {onDelete && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            className="p-1 hover:bg-black/20 rounded transition-colors"
-            title="Delete note"
-          >
-            <X size={18} />
-          </button>
-        )}
+        <div className="flex items-center gap-1">
+          {onAddNote && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddNote();
+              }}
+              className="p-1 hover:bg-black/20 rounded transition-colors"
+              title="Add another note"
+            >
+              <Plus size={18} />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="p-1 hover:bg-black/20 rounded transition-colors"
+              title="Delete note"
+            >
+              <X size={18} />
+            </button>
+          )}
+        </div>
       </div>
 
       <div
