@@ -11,18 +11,6 @@ const ProfileTraits: React.FC<ProfileTraitsProps> = ({ profileType, profileName 
   const [newTrait, setNewTrait] = useState('');
   const [localTraits, setLocalTraits] = useState<string[]>([]);
 
-  const handleAddTrait = (e: React.FormEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!newTrait.trim()) return;
-
-    // Add to local state
-    setLocalTraits(prev => [...prev, newTrait.trim()]);
-
-    // Clear input
-    setNewTrait('');
-  };
-
   const handleRemoveTrait = (indexToRemove: number) => {
     setLocalTraits(prev => prev.filter((_, index) => index !== indexToRemove));
   };
@@ -36,17 +24,35 @@ const ProfileTraits: React.FC<ProfileTraitsProps> = ({ profileType, profileName 
         What does this game state feel like for you?
       </p>
 
-      <form onSubmit={handleAddTrait} className="mb-4">
+      <div className="mb-4">
         <div className="flex space-x-2">
           <input
             type="text"
             value={newTrait}
             onChange={(e) => setNewTrait(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                if (newTrait.trim()) {
+                  setLocalTraits(prev => [...prev, newTrait.trim()]);
+                  setNewTrait('');
+                }
+              }
+            }}
             placeholder="e.g., calm breath, verbal tilt, laser focus"
             className="flex-1 p-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
           />
           <button
-            type="submit"
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (newTrait.trim()) {
+                setLocalTraits(prev => [...prev, newTrait.trim()]);
+                setNewTrait('');
+              }
+            }}
             disabled={!newTrait.trim()}
             className={`px-3 py-2 bg-blue-600 text-white rounded-md text-sm flex items-center ${
               !newTrait.trim() ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'
@@ -56,7 +62,7 @@ const ProfileTraits: React.FC<ProfileTraitsProps> = ({ profileType, profileName 
             Add
           </button>
         </div>
-      </form>
+      </div>
 
       {/* Display traits */}
       {localTraits.length > 0 && (
@@ -68,6 +74,7 @@ const ProfileTraits: React.FC<ProfileTraitsProps> = ({ profileType, profileName 
             >
               <span className="text-sm text-blue-700">{trait}</span>
               <button
+                type="button"
                 onClick={() => handleRemoveTrait(index)}
                 className="text-blue-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"
               >
