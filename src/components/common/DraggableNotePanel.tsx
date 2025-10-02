@@ -115,14 +115,14 @@ const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({
   return (
     <div
       ref={panelRef}
-      className="fixed bg-white rounded-lg shadow-2xl border-2 border-gray-200 overflow-hidden"
+      className="fixed bg-white rounded-lg shadow-2xl border-2 border-gray-200 overflow-hidden pointer-events-auto"
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
         width: `${size.width}px`,
         height: `${size.height}px`,
         cursor: isDragging ? 'grabbing' : 'default',
-        zIndex: 60
+        zIndex: 100
       }}
       onClick={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}

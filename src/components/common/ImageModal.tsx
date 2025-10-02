@@ -154,17 +154,19 @@ const ImageModal: React.FC<ImageModalProps> = ({
   }, [onClose, currentIndex, canGoPrevious, canGoNext]);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <button
+    <>
+      <div
+        className="fixed inset-0 z-50 bg-black/80"
         onClick={onClose}
-        className="absolute top-4 right-4 p-2 text-white hover:bg-white/10 rounded-full transition-colors z-10"
-        title="Close (Esc)"
-      >
-        <X size={24} />
-      </button>
+      />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 text-white hover:bg-white/10 rounded-full transition-colors z-10 pointer-events-auto"
+          title="Close (Esc)"
+        >
+          <X size={24} />
+        </button>
 
       {hasMultipleImages && (
         <div className="absolute top-4 left-4 text-white text-sm bg-black/50 px-3 py-1 rounded-full z-10">
@@ -178,7 +180,7 @@ const ImageModal: React.FC<ImageModalProps> = ({
             e.stopPropagation();
             handlePrevious();
           }}
-          className="absolute left-4 top-1/2 -translate-y-1/2 p-3 text-white bg-black/50 hover:bg-black/70 rounded-full transition-colors z-10"
+          className="absolute left-4 top-1/2 -translate-y-1/2 p-3 text-white bg-black/50 hover:bg-black/70 rounded-full transition-colors z-10 pointer-events-auto"
           title="Previous (← or scroll up)"
         >
           <ChevronLeft size={32} />
@@ -191,7 +193,7 @@ const ImageModal: React.FC<ImageModalProps> = ({
             e.stopPropagation();
             handleNext();
           }}
-          className="absolute right-4 top-1/2 -translate-y-1/2 p-3 text-white bg-black/50 hover:bg-black/70 rounded-full transition-colors z-10"
+          className="absolute right-4 top-1/2 -translate-y-1/2 p-3 text-white bg-black/50 hover:bg-black/70 rounded-full transition-colors z-10 pointer-events-auto"
           title="Next (→ or scroll down)"
         >
           <ChevronRight size={32} />
@@ -199,7 +201,7 @@ const ImageModal: React.FC<ImageModalProps> = ({
       )}
 
       <div
-        className="relative max-w-7xl max-h-full"
+        className="relative max-w-7xl max-h-full pointer-events-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <img
@@ -208,20 +210,21 @@ const ImageModal: React.FC<ImageModalProps> = ({
           className="max-w-full max-h-[90vh] object-contain rounded-lg"
         />
       </div>
-
-      {notePanels.map((panel) => (
-        <DraggableNotePanel
-          key={panel.id}
-          note={panel.content}
-          onNoteUpdate={(content) => handleNoteUpdate(panel.id, content)}
-          canEdit={canEdit}
-          onDelete={() => handleDeleteNote(panel.id)}
-          onAddNote={canEdit ? handleAddNote : undefined}
-          headerColor={panel.color}
-          initialPosition={panel.position}
-        />
-      ))}
     </div>
+
+    {notePanels.map((panel) => (
+      <DraggableNotePanel
+        key={panel.id}
+        note={panel.content}
+        onNoteUpdate={(content) => handleNoteUpdate(panel.id, content)}
+        canEdit={canEdit}
+        onDelete={() => handleDeleteNote(panel.id)}
+        onAddNote={canEdit ? handleAddNote : undefined}
+        headerColor={panel.color}
+        initialPosition={panel.position}
+      />
+    ))}
+  </>
   );
 };
 
