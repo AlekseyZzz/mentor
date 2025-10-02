@@ -169,13 +169,13 @@ const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({
       </div>
 
       <div
-        className="p-4 overflow-y-auto note-content cursor-text"
+        className="p-4 overflow-y-auto note-content cursor-text flex flex-col"
         style={{ height: `calc(100% - 52px)` }}
         onClick={handleContentClick}
         onWheel={(e) => e.stopPropagation()}
       >
         {canEdit ? (
-          <div>
+          <>
             <textarea
               ref={textareaRef}
               value={editedNote}
@@ -186,13 +186,13 @@ const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({
               onWheel={(e) => e.stopPropagation()}
               placeholder="Click here to add notes about this screenshot..."
               maxLength={500}
-              className="w-full h-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none note-textarea"
-              style={{ minHeight: '200px' }}
+              className="w-full flex-1 p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none note-textarea"
+              style={{ minHeight: '150px' }}
             />
             <div className="text-xs text-gray-500 mt-2">
               {editedNote.length} / 500 characters
             </div>
-          </div>
+          </>
         ) : (
           <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
             {note || 'No notes available'}
