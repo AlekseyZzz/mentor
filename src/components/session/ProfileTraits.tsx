@@ -45,8 +45,7 @@ const ProfileTraits: React.FC<ProfileTraitsProps> = ({ profileType, profileName 
             className="flex-1 p-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
           />
           <button
-            type="button"
-            onClick={handleAddTrait}
+            type="submit"
             disabled={!newTrait.trim()}
             className={`px-3 py-2 bg-blue-600 text-white rounded-md text-sm flex items-center ${
               !newTrait.trim() ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'
