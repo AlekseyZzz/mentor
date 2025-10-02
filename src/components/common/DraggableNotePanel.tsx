@@ -96,6 +96,9 @@ const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({ note, onNoteUpd
         cursor: isDragging ? 'grabbing' : 'default',
         zIndex: 60
       }}
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+      onMouseUp={(e) => e.stopPropagation()}
     >
       <div
         className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white cursor-grab active:cursor-grabbing select-none"
