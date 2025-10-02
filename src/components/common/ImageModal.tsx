@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import DraggableNotePanel from './DraggableNotePanel';
+
+interface NotePanel {
+  id: string;
+  content: string;
+  color: string;
+  position: { x: number; y: number };
+}
 
 interface ImageModalProps {
   imageUrl: string;
@@ -14,6 +21,17 @@ interface ImageModalProps {
   canEdit?: boolean;
 }
 
+const HEADER_COLORS = [
+  'from-blue-500 to-blue-600',
+  'from-emerald-500 to-emerald-600',
+  'from-purple-500 to-purple-600',
+  'from-amber-500 to-amber-600',
+  'from-rose-500 to-rose-600',
+  'from-cyan-500 to-cyan-600',
+  'from-indigo-500 to-indigo-600',
+  'from-teal-500 to-teal-600'
+];
+
 const ImageModal: React.FC<ImageModalProps> = ({
   imageUrl,
   onClose,
@@ -25,9 +43,72 @@ const ImageModal: React.FC<ImageModalProps> = ({
   onNoteUpdate,
   canEdit = false
 }) => {
+  const [notePanels, setNotePanels] = useState<NotePanel[]>([
+    {
+      id: '1',
+      content: note || '',
+      color: HEADER_COLORS[0],
+      position: { x: window.innerWidth - 420, y: 100 }
+    }
+  ]);
+
   const hasMultipleImages = images.length > 1;
   const canGoPrevious = hasMultipleImages && currentIndex > 0;
   const canGoNext = hasMultipleImages && currentIndex < images.length - 1;
+
+  useEffect(() => {
+    setNotePanels([{
+      id: '1',
+      content: note || '',
+      color: HEADER_COLORS[0],
+      position: { x: window.innerWidth - 420, y: 100 }
+    }]);
+  }, [note]);
+
+  const handleAddNote = () => {
+    const randomColor = HEADER_COLORS[Math.floor(Math.random() * HEADER_COLORS.length)];
+    const newPanel: NotePanel = {
+      id: Date.now().toString(),
+      content: '',
+      color: randomColor,
+      position: {
+        x: Math.max(50, Math.min(window.innerWidth - 400, Math.random() * (window.innerWidth - 400))),
+        y: Math.max(50, Math.min(window.innerHeight - 350, Math.random() * (window.innerHeight - 350)))
+      }
+    };
+    setNotePanels([...notePanels, newPanel]);
+  };
+
+  const handleDeleteNote = (id: string) => {
+    if (notePanels.length === 1) {
+      setNotePanels([{
+        ...notePanels[0],
+        content: ''
+      }]);
+      if (onNoteUpdate) {
+        onNoteUpdate('');
+      }
+    } else {
+      const updatedPanels = notePanels.filter(panel => panel.id !== id);
+      setNotePanels(updatedPanels);
+      if (onNoteUpdate) {
+        const combinedNotes = updatedPanels.map(p => p.content).filter(c => c).join('\n\n---\n\n');
+        onNoteUpdate(combinedNotes);
+      }
+    }
+  };
+
+  const handleNoteUpdate = (id: string, content: string) => {
+    const updatedPanels = notePanels.map(panel =>
+      panel.id === id ? { ...panel, content } : panel
+    );
+    setNotePanels(updatedPanels);
+
+    if (onNoteUpdate) {
+      const combinedNotes = updatedPanels.map(p => p.content).filter(c => c).join('\n\n---\n\n');
+      onNoteUpdate(combinedNotes);
+    }
+  };
 
   const handlePrevious = () => {
     if (canGoPrevious && onNavigate) {
@@ -128,14 +209,30 @@ const ImageModal: React.FC<ImageModalProps> = ({
         />
       </div>
 
-      {(note || canEdit) && (
-        <DraggableNotePanel
-          note={note}
-          onNoteUpdate={onNoteUpdate}
-          canEdit={canEdit}
-          onClose={onClose}
-        />
+      {canEdit && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAddNote();
+          }}
+          className="fixed top-4 left-1/2 -translate-x-1/2 p-2 text-white bg-green-600 hover:bg-green-700 rounded-full transition-colors z-10 shadow-lg"
+          title="Add new note"
+        >
+          <Plus size={24} />
+        </button>
       )}
+
+      {notePanels.map((panel) => (
+        <DraggableNotePanel
+          key={panel.id}
+          note={panel.content}
+          onNoteUpdate={(content) => handleNoteUpdate(panel.id, content)}
+          canEdit={canEdit}
+          onDelete={() => handleDeleteNote(panel.id)}
+          headerColor={panel.color}
+          initialPosition={panel.position}
+        />
+      ))}
     </div>
   );
 };

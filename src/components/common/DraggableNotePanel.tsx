@@ -1,16 +1,25 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { GripVertical, Minimize2 } from 'lucide-react';
+import { GripVertical, X } from 'lucide-react';
 
 interface DraggableNotePanelProps {
   note: string;
   onNoteUpdate?: (note: string) => void;
   canEdit: boolean;
-  onClose?: () => void;
+  onDelete?: () => void;
+  headerColor?: string;
+  initialPosition?: { x: number; y: number };
 }
 
-const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({ note, onNoteUpdate, canEdit, onClose }) => {
+const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({
+  note,
+  onNoteUpdate,
+  canEdit,
+  onDelete,
+  headerColor = 'from-blue-500 to-blue-600',
+  initialPosition
+}) => {
   const [editedNote, setEditedNote] = useState(note);
-  const [position, setPosition] = useState({ x: window.innerWidth - 420, y: 100 });
+  const [position, setPosition] = useState(initialPosition || { x: window.innerWidth - 420, y: 100 });
   const [size, setSize] = useState({ width: 350, height: 300 });
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -118,20 +127,23 @@ const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({ note, onNoteUpd
       onMouseUp={(e) => e.stopPropagation()}
     >
       <div
-        className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white cursor-grab active:cursor-grabbing select-none"
+        className={`flex items-center justify-between p-3 bg-gradient-to-r ${headerColor} text-white cursor-grab active:cursor-grabbing select-none`}
         onMouseDown={handleMouseDownDrag}
       >
         <div className="flex items-center gap-2">
           <GripVertical size={18} />
           <h4 className="font-semibold">Screenshot Notes</h4>
         </div>
-        {onClose && (
+        {onDelete && (
           <button
-            onClick={onClose}
-            className="p-1 hover:bg-blue-700 rounded transition-colors"
-            title="Close and save"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="p-1 hover:bg-black/20 rounded transition-colors"
+            title="Delete note"
           >
-            <Minimize2 size={16} />
+            <X size={18} />
           </button>
         )}
       </div>
