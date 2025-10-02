@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, X } from 'lucide-react';
-import { MentalGameTrait } from '../../lib/api/mentalGameTraits';
+import {
+  MentalGameTrait,
+  addMentalGameTrait,
+  getMentalGameTraits,
+  deleteMentalGameTrait
+} from '../../lib/api/mentalGameTraits';
 
 interface ProfileTraitsProps {
   profileType: 'a' | 'b' | 'c' | 'd';
@@ -9,10 +14,43 @@ interface ProfileTraitsProps {
 
 const ProfileTraits: React.FC<ProfileTraitsProps> = ({ profileType, profileName }) => {
   const [newTrait, setNewTrait] = useState('');
-  const [localTraits, setLocalTraits] = useState<string[]>([]);
+  const [traits, setTraits] = useState<MentalGameTrait[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleRemoveTrait = (indexToRemove: number) => {
-    setLocalTraits(prev => prev.filter((_, index) => index !== indexToRemove));
+  useEffect(() => {
+    loadTraits();
+  }, [profileType]);
+
+  const loadTraits = async () => {
+    try {
+      const data = await getMentalGameTraits(profileType);
+      setTraits(data || []);
+    } catch (error) {
+      console.error('Failed to load traits:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddTrait = async () => {
+    if (!newTrait.trim()) return;
+
+    try {
+      const newTraitData = await addMentalGameTrait(profileType, newTrait.trim());
+      setTraits(prev => [...prev, newTraitData]);
+      setNewTrait('');
+    } catch (error) {
+      console.error('Failed to add trait:', error);
+    }
+  };
+
+  const handleRemoveTrait = async (traitId: string) => {
+    try {
+      await deleteMentalGameTrait(traitId);
+      setTraits(prev => prev.filter(t => t.id !== traitId));
+    } catch (error) {
+      console.error('Failed to delete trait:', error);
+    }
   };
 
   return (
@@ -34,10 +72,7 @@ const ProfileTraits: React.FC<ProfileTraitsProps> = ({ profileType, profileName 
               if (e.key === 'Enter') {
                 e.preventDefault();
                 e.stopPropagation();
-                if (newTrait.trim()) {
-                  setLocalTraits(prev => [...prev, newTrait.trim()]);
-                  setNewTrait('');
-                }
+                handleAddTrait();
               }
             }}
             placeholder="e.g., calm breath, verbal tilt, laser focus"
@@ -48,14 +83,11 @@ const ProfileTraits: React.FC<ProfileTraitsProps> = ({ profileType, profileName 
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              if (newTrait.trim()) {
-                setLocalTraits(prev => [...prev, newTrait.trim()]);
-                setNewTrait('');
-              }
+              handleAddTrait();
             }}
-            disabled={!newTrait.trim()}
+            disabled={!newTrait.trim() || loading}
             className={`px-3 py-2 bg-blue-600 text-white rounded-md text-sm flex items-center ${
-              !newTrait.trim() ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'
+              !newTrait.trim() || loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'
             }`}
           >
             <Plus size={16} className="mr-1" />
@@ -65,17 +97,19 @@ const ProfileTraits: React.FC<ProfileTraitsProps> = ({ profileType, profileName 
       </div>
 
       {/* Display traits */}
-      {localTraits.length > 0 && (
+      {loading ? (
+        <div className="text-sm text-gray-500 text-center py-2">Loading...</div>
+      ) : traits.length > 0 ? (
         <div className="space-y-2">
-          {localTraits.map((trait, index) => (
+          {traits.map((trait) => (
             <div
-              key={index}
+              key={trait.id}
               className="flex items-center justify-between p-2 bg-blue-50 rounded-md group"
             >
-              <span className="text-sm text-blue-700">{trait}</span>
+              <span className="text-sm text-blue-700">{trait.trait_text}</span>
               <button
                 type="button"
-                onClick={() => handleRemoveTrait(index)}
+                onClick={() => handleRemoveTrait(trait.id)}
                 className="text-blue-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <X size={16} />
@@ -83,7 +117,7 @@ const ProfileTraits: React.FC<ProfileTraitsProps> = ({ profileType, profileName 
             </div>
           ))}
         </div>
-      )}
+      ) : null}
     </div>
   );
 };
