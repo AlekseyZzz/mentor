@@ -34,6 +34,8 @@ const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({ note, onNoteUpd
     if ((e.target as HTMLElement).closest('.note-content, .note-textarea')) {
       return;
     }
+    e.preventDefault();
+    e.stopPropagation();
     setIsDragging(true);
     setDragStart({
       x: e.clientX - position.x,
@@ -42,6 +44,7 @@ const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({ note, onNoteUpd
   };
 
   const handleMouseDownResize = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     setIsResizing(true);
     setResizeStart({
@@ -55,12 +58,16 @@ const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({ note, onNoteUpd
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDragging) {
+        e.preventDefault();
+        e.stopPropagation();
         const newX = Math.max(0, Math.min(window.innerWidth - size.width, e.clientX - dragStart.x));
         const newY = Math.max(0, Math.min(window.innerHeight - size.height, e.clientY - dragStart.y));
         setPosition({ x: newX, y: newY });
       }
 
       if (isResizing) {
+        e.preventDefault();
+        e.stopPropagation();
         const deltaX = e.clientX - resizeStart.x;
         const deltaY = e.clientY - resizeStart.y;
         const newWidth = Math.max(250, Math.min(600, resizeStart.width + deltaX));
@@ -69,20 +76,24 @@ const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({ note, onNoteUpd
       }
     };
 
-    const handleMouseUp = () => {
-      setIsDragging(false);
-      setIsResizing(false);
+    const handleMouseUp = (e: MouseEvent) => {
+      if (isDragging || isResizing) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+        setIsResizing(false);
+      }
     };
 
     if (isDragging || isResizing) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('mousemove', handleMouseMove, true);
+      document.addEventListener('mouseup', handleMouseUp, true);
       return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('mousemove', handleMouseMove, true);
+        document.removeEventListener('mouseup', handleMouseUp, true);
       };
     }
-  }, [isDragging, isResizing, dragStart, resizeStart, size]);
+  }, [isDragging, isResizing, dragStart, resizeStart, size, position]);
 
   return (
     <div
