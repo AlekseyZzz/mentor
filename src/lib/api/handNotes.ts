@@ -14,6 +14,7 @@ export interface HandNoteFront {
   thoughts: string;
   arguments_for: string[];
   tags: string[];
+  spot_position?: string | null;
 }
 
 export interface HandNoteBack {

@@ -4,6 +4,7 @@ import { ArrowLeft, Upload, Plus, X, Clipboard } from 'lucide-react';
 import { createHandNote, uploadHandScreenshot, CreateHandNoteData } from '../lib/api/handNotes';
 import { TILT_TYPES, GAME_STATES } from '../lib/constants/analysisТags';
 import TagSelector from '../components/common/TagSelector';
+import SpotSelector from '../components/common/SpotSelector';
 import ImageModal from '../components/common/ImageModal';
 import ScreenshotNoteModal from '../components/common/ScreenshotNoteModal';
 
@@ -18,6 +19,7 @@ const AnalysisCreate: React.FC = () => {
   const [thoughts, setThoughts] = useState('');
   const [argumentsFor, setArgumentsFor] = useState<string[]>(['']);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [spotPosition, setSpotPosition] = useState('');
 
   const [wizardLink, setWizardLink] = useState('');
   const [wizardScreenshots, setWizardScreenshots] = useState<string[]>([]);
@@ -184,7 +186,8 @@ const AnalysisCreate: React.FC = () => {
           screenshot_urls: screenshots,
           thoughts: thoughts,
           arguments_for: argumentsFor.filter(arg => arg.trim().length > 0),
-          tags: selectedTags
+          tags: selectedTags,
+          spot_position: spotPosition || null
         },
         back: {
           wizard_link: wizardLink || null,
@@ -390,6 +393,13 @@ const AnalysisCreate: React.FC = () => {
                 </button>
               )}
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Position / Spot
+            </label>
+            <SpotSelector value={spotPosition} onChange={setSpotPosition} />
           </div>
 
           <div>
