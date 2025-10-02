@@ -153,19 +153,19 @@ const MentalQualitySection: React.FC<MentalQualitySectionProps> = ({
                   </button>
                 </div>
                 {customReasons.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2">
+                  <div className="mt-2 space-y-2">
                     {customReasons.map((reason, index) => (
                       <div
                         key={index}
-                        className="flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm group"
+                        className="flex items-center justify-between p-2 bg-blue-50 rounded-md group"
                       >
-                        <span>{reason}</span>
+                        <span className="text-sm text-blue-700">{reason}</span>
                         <button
                           type="button"
                           onClick={() => handleRemoveCustomReason(reason)}
-                          className="text-blue-400 hover:text-blue-600 opacity-70 group-hover:opacity-100 transition-opacity"
+                          className="text-blue-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"
                         >
-                          <X size={14} />
+                          <X size={16} />
                         </button>
                       </div>
                     ))}
