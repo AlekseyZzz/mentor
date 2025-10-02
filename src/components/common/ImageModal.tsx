@@ -51,19 +51,23 @@ const ImageModal: React.FC<ImageModalProps> = ({
       position: { x: window.innerWidth - 420, y: 100 }
     }
   ]);
+  const [initializedNote, setInitializedNote] = useState<string>(note || '');
 
   const hasMultipleImages = images.length > 1;
   const canGoPrevious = hasMultipleImages && currentIndex > 0;
   const canGoNext = hasMultipleImages && currentIndex < images.length - 1;
 
   useEffect(() => {
-    setNotePanels([{
-      id: '1',
-      content: note || '',
-      color: HEADER_COLORS[0],
-      position: { x: window.innerWidth - 420, y: 100 }
-    }]);
-  }, [note]);
+    if (note !== initializedNote) {
+      setNotePanels([{
+        id: '1',
+        content: note || '',
+        color: HEADER_COLORS[0],
+        position: { x: window.innerWidth - 420, y: 100 }
+      }]);
+      setInitializedNote(note || '');
+    }
+  }, [imageUrl]);
 
   const handleAddNote = () => {
     const randomColor = HEADER_COLORS[Math.floor(Math.random() * HEADER_COLORS.length)];
