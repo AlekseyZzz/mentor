@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Upload, Plus, X, Clipboard } from 'lucide-react';
 import { createHandNote, uploadHandScreenshot, CreateHandNoteData } from '../lib/api/handNotes';
+import { createScreenshotNote } from '../lib/api/screenshotNotes';
 import { TILT_TYPES, GAME_STATES } from '../lib/constants/analysisТags';
 import TagSelector from '../components/common/TagSelector';
 import ImageModal from '../components/common/ImageModal';
@@ -207,7 +208,26 @@ const AnalysisCreate: React.FC = () => {
         }
       };
 
-      await createHandNote(data);
+      const handNote = await createHandNote(data);
+
+      const allScreenshots = [
+        ...screenshots.map((url, idx) => ({ url, type: 'hand' as const, order: idx })),
+        ...wizardScreenshots.map((url, idx) => ({ url, type: 'wizard' as const, order: idx }))
+      ];
+
+      for (const screenshot of allScreenshots) {
+        const note = screenshotNotes.get(screenshot.url);
+        if (note && note.trim().length > 0) {
+          await createScreenshotNote({
+            hand_note_id: handNote.id,
+            screenshot_url: screenshot.url,
+            note: note,
+            screenshot_type: screenshot.type,
+            display_order: screenshot.order
+          });
+        }
+      }
+
       navigate('/analysis');
     } catch (error) {
       console.error('Failed to save hand:', error);
