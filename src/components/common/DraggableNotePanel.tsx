@@ -1,14 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, CreditCard as Edit2, Save, GripVertical } from 'lucide-react';
+import { GripVertical, Minimize2 } from 'lucide-react';
 
 interface DraggableNotePanelProps {
   note: string;
   onNoteUpdate?: (note: string) => void;
   canEdit: boolean;
+  onClose?: () => void;
 }
 
-const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({ note, onNoteUpdate, canEdit }) => {
-  const [isEditingNote, setIsEditingNote] = useState(false);
+const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({ note, onNoteUpdate, canEdit, onClose }) => {
   const [editedNote, setEditedNote] = useState(note);
   const [position, setPosition] = useState({ x: window.innerWidth - 420, y: 100 });
   const [size, setSize] = useState({ width: 350, height: 300 });
@@ -17,17 +17,23 @@ const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({ note, onNoteUpd
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const panelRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setEditedNote(note);
-    setIsEditingNote(false);
   }, [note]);
 
-  const handleSaveNote = () => {
+  const handleNoteChange = (value: string) => {
+    setEditedNote(value);
     if (onNoteUpdate) {
-      onNoteUpdate(editedNote);
+      onNoteUpdate(value);
     }
-    setIsEditingNote(false);
+  };
+
+  const handleContentClick = () => {
+    if (canEdit && textareaRef.current) {
+      textareaRef.current.focus();
+    }
   };
 
   const handleMouseDownDrag = (e: React.MouseEvent) => {
@@ -119,38 +125,29 @@ const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({ note, onNoteUpd
           <GripVertical size={18} />
           <h4 className="font-semibold">Screenshot Notes</h4>
         </div>
-        <div className="flex items-center gap-2">
-          {canEdit && !isEditingNote && (
-            <button
-              onClick={() => setIsEditingNote(true)}
-              className="p-1 hover:bg-blue-700 rounded transition-colors"
-              title="Edit note"
-            >
-              <Edit2 size={16} />
-            </button>
-          )}
-          {canEdit && isEditingNote && (
-            <button
-              onClick={handleSaveNote}
-              className="p-1 hover:bg-blue-700 rounded transition-colors"
-              title="Save note"
-            >
-              <Save size={16} />
-            </button>
-          )}
-        </div>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-blue-700 rounded transition-colors"
+            title="Close and save"
+          >
+            <Minimize2 size={16} />
+          </button>
+        )}
       </div>
 
       <div
-        className="p-4 overflow-y-auto note-content"
+        className="p-4 overflow-y-auto note-content cursor-text"
         style={{ height: `calc(100% - 52px)` }}
+        onClick={handleContentClick}
       >
-        {isEditingNote ? (
+        {canEdit ? (
           <div>
             <textarea
+              ref={textareaRef}
               value={editedNote}
-              onChange={(e) => setEditedNote(e.target.value)}
-              placeholder="Add your thoughts about this screenshot..."
+              onChange={(e) => handleNoteChange(e.target.value)}
+              placeholder="Click here to add notes about this screenshot..."
               maxLength={500}
               className="w-full h-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none note-textarea"
               style={{ minHeight: '200px' }}
@@ -161,7 +158,7 @@ const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({ note, onNoteUpd
           </div>
         ) : (
           <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-            {note || (canEdit ? 'Click edit to add notes about this screenshot' : 'No notes available')}
+            {note || 'No notes available'}
           </div>
         )}
       </div>

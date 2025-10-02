@@ -133,6 +133,7 @@ const ImageModal: React.FC<ImageModalProps> = ({
           note={note}
           onNoteUpdate={onNoteUpdate}
           canEdit={canEdit}
+          onClose={onClose}
         />
       )}
     </div>
