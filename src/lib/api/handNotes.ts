@@ -226,27 +226,38 @@ export const uploadHandScreenshot = async (
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const timestamp = Date.now();
-  const safeFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-  const filePath = `${user.id}/${subfolder}/${year}/${month}/${timestamp}-${safeFileName}`;
+  const reader = new FileReader();
+  const base64Promise = new Promise<string>((resolve, reject) => {
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
-  const { data, error } = await supabase.storage
-    .from('hand-analysis')
-    .upload(filePath, file, {
-      cacheControl: '3600',
-      upsert: false
-    });
+  const base64 = await base64Promise;
 
-  if (error) throw error;
+  const response = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-screenshot`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        file: base64,
+        fileName: file.name,
+        contentType: file.type || 'image/png',
+      }),
+    }
+  );
 
-  const { data: { publicUrl } } = supabase.storage
-    .from('hand-analysis')
-    .getPublicUrl(data.path);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Upload failed');
+  }
 
-  return publicUrl;
+  const result = await response.json();
+  return result.url;
 };
 
 export const duplicateHandNote = async (id: string): Promise<HandNote> => {
