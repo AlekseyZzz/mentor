@@ -124,6 +124,15 @@ const ImageModal: React.FC<ImageModalProps> = ({
 
   useEffect(() => {
     const handleKeyboard = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isTextInput = target.tagName === 'TEXTAREA' ||
+                         target.tagName === 'INPUT' ||
+                         target.isContentEditable;
+
+      if (isTextInput && e.key !== 'Escape') {
+        return;
+      }
+
       if (e.key === 'Escape') {
         onClose();
       } else if (e.key === 'ArrowLeft') {

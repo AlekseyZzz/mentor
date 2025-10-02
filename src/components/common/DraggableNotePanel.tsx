@@ -127,6 +127,9 @@ const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({
       onClick={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}
       onMouseUp={(e) => e.stopPropagation()}
+      onKeyDown={(e) => e.stopPropagation()}
+      onKeyUp={(e) => e.stopPropagation()}
+      onKeyPress={(e) => e.stopPropagation()}
     >
       <div
         className={`flex items-center justify-between p-3 bg-gradient-to-r ${headerColor} text-white cursor-grab active:cursor-grabbing select-none`}
@@ -175,6 +178,9 @@ const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({
               ref={textareaRef}
               value={editedNote}
               onChange={(e) => handleNoteChange(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
+              onKeyUp={(e) => e.stopPropagation()}
+              onKeyPress={(e) => e.stopPropagation()}
               placeholder="Click here to add notes about this screenshot..."
               maxLength={500}
               className="w-full h-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none note-textarea"
