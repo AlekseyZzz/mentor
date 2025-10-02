@@ -197,14 +197,25 @@ export const deleteHandNote = async (id: string, hard: boolean = false): Promise
       .delete()
       .eq('id', id);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Delete error:', error);
+      throw error;
+    }
   } else {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('hand_notes')
       .update({ deleted_at: new Date().toISOString() })
-      .eq('id', id);
+      .eq('id', id)
+      .select();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Soft delete error:', error);
+      throw error;
+    }
+
+    if (!data || data.length === 0) {
+      throw new Error('Hand note not found or already deleted');
+    }
   }
 };
 

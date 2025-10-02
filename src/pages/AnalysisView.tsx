@@ -63,9 +63,10 @@ const AnalysisView: React.FC = () => {
     try {
       await deleteHandNote(id);
       navigate('/analysis');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to delete hand:', error);
-      alert('Failed to delete hand');
+      const errorMessage = error?.message || 'Unknown error occurred';
+      alert(`Failed to delete hand: ${errorMessage}`);
     } finally {
       setDeleting(false);
     }
