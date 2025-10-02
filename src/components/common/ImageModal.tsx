@@ -26,6 +26,7 @@ interface ImageModalProps {
   onNavigate?: (index: number) => void;
   notes?: ScreenshotNote[];
   onNotesUpdate?: (notes: ScreenshotNote[]) => void;
+  onPositionUpdate?: (noteId: string, position: { x: number; y: number }, size: { width: number; height: number }) => void;
   canEdit?: boolean;
 }
 
@@ -49,6 +50,7 @@ const ImageModal: React.FC<ImageModalProps> = ({
   onNavigate,
   notes = [],
   onNotesUpdate,
+  onPositionUpdate,
   canEdit = false
 }) => {
   const [notePanels, setNotePanels] = useState<NotePanel[]>([]);
@@ -148,14 +150,8 @@ const ImageModal: React.FC<ImageModalProps> = ({
     );
     setNotePanels(updatedPanels);
 
-    if (onNotesUpdate) {
-      const updatedNotes = updatedPanels.map(p => ({
-        id: p.id,
-        content: p.content,
-        position: p.position,
-        size: p.size
-      }));
-      onNotesUpdate(updatedNotes);
+    if (onPositionUpdate) {
+      onPositionUpdate(id, position, size);
     }
   };
 

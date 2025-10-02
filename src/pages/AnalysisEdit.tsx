@@ -211,10 +211,6 @@ const AnalysisEdit: React.FC = () => {
           if (note.content && note.content.trim().length > 0) {
             await updateScreenshotNoteApi(existingNote.dbId, note.content);
 
-            if (note.position && note.size) {
-              await updateScreenshotNotePosition(existingNote.dbId, note.position, note.size);
-            }
-
             updatedNotes.push({
               ...note,
               dbId: existingNote.dbId
@@ -228,7 +224,11 @@ const AnalysisEdit: React.FC = () => {
             screenshot_url: url,
             note: note.content,
             screenshot_type: type,
-            display_order: baseDisplayOrder * 100 + i
+            display_order: baseDisplayOrder * 100 + i,
+            panel_x: note.position?.x,
+            panel_y: note.position?.y,
+            panel_width: note.size?.width,
+            panel_height: note.size?.height
           });
           updatedNotes.push({
             ...note,
@@ -248,6 +248,30 @@ const AnalysisEdit: React.FC = () => {
       setScreenshotNotes(newNotes);
     } catch (error) {
       console.error('Failed to update screenshot notes:', error);
+    }
+  };
+
+  const handlePositionUpdate = async (noteId: string, position: { x: number; y: number }, size: { width: number; height: number }) => {
+    try {
+      const updatedNotesMap = new Map(screenshotNotes);
+
+      for (const [url, notes] of updatedNotesMap.entries()) {
+        const noteIndex = notes.findIndex(n => n.id === noteId);
+        if (noteIndex !== -1) {
+          const note = notes[noteIndex];
+          if (note.dbId) {
+            await updateScreenshotNotePosition(note.dbId, position, size);
+
+            const updatedNotes = [...notes];
+            updatedNotes[noteIndex] = { ...note, position, size };
+            updatedNotesMap.set(url, updatedNotes);
+            setScreenshotNotes(updatedNotesMap);
+          }
+          break;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to update note position:', error);
     }
   };
 
@@ -808,6 +832,7 @@ const AnalysisEdit: React.FC = () => {
           }}
           notes={screenshotNotes.get(selectedImage) || []}
           onNotesUpdate={(notes) => handleUpdateScreenshotNotes(selectedImage, notes)}
+          onPositionUpdate={handlePositionUpdate}
           canEdit={true}
         />
       )}
