@@ -30,6 +30,8 @@ const AnalysisCreate: React.FC = () => {
   const [adaptiveThought, setAdaptiveThought] = useState('');
   const [nextTimePlan, setNextTimePlan] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
+  const [allImages, setAllImages] = useState<string[]>([]);
   const [markForReview, setMarkForReview] = useState(false);
 
   useEffect(() => {
@@ -277,7 +279,11 @@ const AnalysisCreate: React.FC = () => {
                     src={url}
                     alt={`Screenshot ${idx + 1}`}
                     className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                    onClick={() => setSelectedImage(url)}
+                    onClick={() => {
+                      setAllImages(screenshots);
+                      setSelectedImageIndex(idx);
+                      setSelectedImage(url);
+                    }}
                   />
                   <button
                     onClick={() => removeScreenshot(idx, 'hand')}
@@ -409,7 +415,11 @@ const AnalysisCreate: React.FC = () => {
                     src={url}
                     alt={`Wizard ${idx + 1}`}
                     className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                    onClick={() => setSelectedImage(url)}
+                    onClick={() => {
+                      setAllImages(wizardScreenshots);
+                      setSelectedImageIndex(idx);
+                      setSelectedImage(url);
+                    }}
                   />
                   <button
                     onClick={() => removeScreenshot(idx, 'wizard')}
@@ -621,6 +631,12 @@ const AnalysisCreate: React.FC = () => {
         <ImageModal
           imageUrl={selectedImage}
           onClose={() => setSelectedImage(null)}
+          images={allImages}
+          currentIndex={selectedImageIndex}
+          onNavigate={(index) => {
+            setSelectedImageIndex(index);
+            setSelectedImage(allImages[index]);
+          }}
         />
       )}
     </div>

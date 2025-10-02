@@ -12,6 +12,8 @@ const AnalysisView: React.FC = () => {
   const [showFront, setShowFront] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
+  const [allImages, setAllImages] = useState<string[]>([]);
 
   useEffect(() => {
     if (id) {
@@ -164,7 +166,11 @@ const AnalysisView: React.FC = () => {
                     {hand.front.screenshot_urls.map((url, idx) => (
                       <button
                         key={idx}
-                        onClick={() => setSelectedImage(url)}
+                        onClick={() => {
+                          setAllImages(hand.front.screenshot_urls);
+                          setSelectedImageIndex(idx);
+                          setSelectedImage(url);
+                        }}
                         className="block rounded-lg overflow-hidden border border-gray-200 hover:border-blue-500 transition-colors cursor-pointer"
                       >
                         <img
@@ -262,7 +268,11 @@ const AnalysisView: React.FC = () => {
                     {hand.back.wizard_screenshots.map((url, idx) => (
                       <button
                         key={idx}
-                        onClick={() => setSelectedImage(url)}
+                        onClick={() => {
+                          setAllImages(hand.back.wizard_screenshots);
+                          setSelectedImageIndex(idx);
+                          setSelectedImage(url);
+                        }}
                         className="block rounded-lg overflow-hidden border border-gray-200 hover:border-blue-500 transition-colors cursor-pointer"
                       >
                         <img
@@ -387,6 +397,12 @@ const AnalysisView: React.FC = () => {
         <ImageModal
           imageUrl={selectedImage}
           onClose={() => setSelectedImage(null)}
+          images={allImages}
+          currentIndex={selectedImageIndex}
+          onNavigate={(index) => {
+            setSelectedImageIndex(index);
+            setSelectedImage(allImages[index]);
+          }}
         />
       )}
     </div>

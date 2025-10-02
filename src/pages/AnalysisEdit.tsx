@@ -25,6 +25,8 @@ const AnalysisEdit: React.FC = () => {
   const [correctSolution, setCorrectSolution] = useState('');
   const [argumentsAgainst, setArgumentsAgainst] = useState<string[]>(['']);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
+  const [allImages, setAllImages] = useState<string[]>([]);
   const [focus, setFocus] = useState<number | undefined>(undefined);
   const [confidence, setConfidence] = useState<number | undefined>(undefined);
   const [impulsivity, setImpulsivity] = useState<number | undefined>(undefined);
@@ -326,7 +328,11 @@ const AnalysisEdit: React.FC = () => {
                     src={url}
                     alt={`Screenshot ${idx + 1}`}
                     className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                    onClick={() => setSelectedImage(url)}
+                    onClick={() => {
+                      setAllImages(screenshots);
+                      setSelectedImageIndex(idx);
+                      setSelectedImage(url);
+                    }}
                   />
                   <button
                     onClick={() => removeScreenshot(idx, 'hand')}
@@ -458,7 +464,11 @@ const AnalysisEdit: React.FC = () => {
                     src={url}
                     alt={`Wizard ${idx + 1}`}
                     className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                    onClick={() => setSelectedImage(url)}
+                    onClick={() => {
+                      setAllImages(wizardScreenshots);
+                      setSelectedImageIndex(idx);
+                      setSelectedImage(url);
+                    }}
                   />
                   <button
                     onClick={() => removeScreenshot(idx, 'wizard')}
@@ -670,6 +680,12 @@ const AnalysisEdit: React.FC = () => {
         <ImageModal
           imageUrl={selectedImage}
           onClose={() => setSelectedImage(null)}
+          images={allImages}
+          currentIndex={selectedImageIndex}
+          onNavigate={(index) => {
+            setSelectedImageIndex(index);
+            setSelectedImage(allImages[index]);
+          }}
         />
       )}
     </div>
