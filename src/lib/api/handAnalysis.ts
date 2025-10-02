@@ -20,20 +20,31 @@ export interface HandAnalysis {
   wizard_drill_script?: string;
 }
 
-export const createHandAnalysis = async (sessionId: string, hands: Omit<HandAnalysis, 'id' | 'session_id'>[]) => {
+export const createHandAnalysis = async (sessionId: string, hands: any[]) => {
   if (!hands.length) return [];
 
   const { data: { user } } = await supabase.auth.getUser();
 
+  const handsToInsert = hands.map(hand => ({
+    session_id: sessionId,
+    user_id: user?.id,
+    screenshot_url: hand.screenshot_url || hand.screenshotUrl,
+    hand_description: hand.hand_description || hand.description,
+    initial_thought: hand.initial_thought || hand.initialThought,
+    adaptive_thought: hand.adaptive_thought || hand.adaptiveThought,
+    arguments_for_initial: hand.arguments_for_initial || hand.argumentsFor,
+    arguments_against_initial: hand.arguments_against_initial || hand.argumentsAgainst,
+    spot_type: hand.spot_type || hand.spotType,
+    position_dynamic: hand.position_dynamic || hand.positionDynamic,
+    tags: hand.tags || [],
+    priority_level: hand.priority_level || hand.priorityLevel,
+    theory_attachments: hand.theory_attachments || hand.theoryAttachments || [],
+    wizard_drill_script: hand.wizard_drill_script || hand.wizardDrillScript
+  }));
+
   const { data, error } = await supabase
     .from('hand_analysis')
-    .insert(
-      hands.map(hand => ({
-        ...hand,
-        session_id: sessionId,
-        user_id: user?.id
-      }))
-    )
+    .insert(handsToInsert)
     .select();
 
   if (error) throw error;

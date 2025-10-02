@@ -106,17 +106,18 @@ const PostSession: React.FC = () => {
         session.hand_analysis.forEach((hand: any, idx: number) => {
           handsDataObj[idx] = {
             id: hand.id,
-            screenshotUrl: hand.screenshot_url,
-            description: hand.hand_description,
-            initialThought: hand.initial_thought,
-            adaptiveThought: hand.adaptive_thought,
-            argumentsFor: hand.arguments_for_initial || '',
-            argumentsAgainst: hand.arguments_against_initial || '',
-            spotType: hand.spot_type || '',
-            positionDynamic: hand.position_dynamic || '',
+            screenshot_url: hand.screenshot_url,
+            hand_description: hand.hand_description,
+            initial_thought: hand.initial_thought,
+            adaptive_thought: hand.adaptive_thought,
+            arguments_for_initial: hand.arguments_for_initial || '',
+            arguments_against_initial: hand.arguments_against_initial || '',
+            spot_type: hand.spot_type || '',
+            position_dynamic: hand.position_dynamic || '',
             tags: hand.tags || [],
-            priorityLevel: hand.priority_level || 'low',
-            theoryAttachments: hand.theory_attachments || []
+            priority_level: hand.priority_level || 'low',
+            theory_attachments: hand.theory_attachments || [],
+            wizard_drill_script: hand.wizard_drill_script || ''
           };
         });
         setHandsData(handsDataObj);
@@ -204,12 +205,25 @@ const PostSession: React.FC = () => {
         sessionData = await updatePostSession(editSessionId, sessionPayload);
 
         const handsToSave = Object.values(handsData).filter(hand =>
-          hand.description || hand.initialThought || hand.adaptiveThought
+          hand.hand_description || hand.initial_thought || hand.adaptive_thought
         );
 
         for (const hand of handsToSave) {
           if (hand.id && !hand.id.toString().startsWith('temp-')) {
-            await updateHandAnalysis(hand.id, hand);
+            await updateHandAnalysis(hand.id, {
+              screenshotUrl: hand.screenshot_url,
+              description: hand.hand_description,
+              initialThought: hand.initial_thought,
+              adaptiveThought: hand.adaptive_thought,
+              argumentsFor: hand.arguments_for_initial,
+              argumentsAgainst: hand.arguments_against_initial,
+              spotType: hand.spot_type,
+              positionDynamic: hand.position_dynamic,
+              tags: hand.tags,
+              priorityLevel: hand.priority_level,
+              theoryAttachments: hand.theory_attachments,
+              wizardDrillScript: hand.wizard_drill_script
+            });
           } else {
             await createHandAnalysis(editSessionId, [hand]);
           }
@@ -226,7 +240,7 @@ const PostSession: React.FC = () => {
         sessionData = await submit(sessionPayload);
 
         const handsToSave = Object.values(handsData).filter(hand =>
-          hand.description || hand.initialThought || hand.adaptiveThought
+          hand.hand_description || hand.initial_thought || hand.adaptive_thought
         );
 
         if (handsToSave.length > 0) {
@@ -364,6 +378,7 @@ const PostSession: React.FC = () => {
                 expanded={expandedHands.includes(index)}
                 onToggle={() => toggleHand(index)}
                 onChange={(data) => handleHandDataChange(index, data)}
+                initialData={handsData[index]}
               />
             ))}
           </div>

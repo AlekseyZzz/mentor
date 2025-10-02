@@ -22,21 +22,28 @@ interface HandAnalysisProps {
   expanded: boolean;
   onToggle: () => void;
   onChange?: (data: HandData) => void;
+  initialData?: HandData;
 }
 
-const HandAnalysis: React.FC<HandAnalysisProps> = ({ index, expanded, onToggle, onChange }) => {
-  const [handScreenshot, setHandScreenshot] = useState<string | null>(null);
-  const [handDescription, setHandDescription] = useState('');
-  const [initialThought, setInitialThought] = useState('');
-  const [adaptiveThought, setAdaptiveThought] = useState('');
-  const [forArguments, setForArguments] = useState('');
-  const [againstArguments, setAgainstArguments] = useState('');
-  const [spotType, setSpotType] = useState<string>('');
-  const [positionDynamic, setPositionDynamic] = useState<string>('');
-  const [tags, setTags] = useState<string[]>([]);
-  const [priorityLevel, setPriorityLevel] = useState<'high' | 'medium' | 'low' | undefined>();
-  const [theoryAttachments, setTheoryAttachments] = useState<Array<{ id: string; image: string; caption: string }>>([]);
-  const [wizardDrillScript, setWizardDrillScript] = useState('');
+const HandAnalysis: React.FC<HandAnalysisProps> = ({ index, expanded, onToggle, onChange, initialData }) => {
+  const [handScreenshot, setHandScreenshot] = useState<string | null>(initialData?.screenshot_url || null);
+  const [handDescription, setHandDescription] = useState(initialData?.hand_description || '');
+  const [initialThought, setInitialThought] = useState(initialData?.initial_thought || '');
+  const [adaptiveThought, setAdaptiveThought] = useState(initialData?.adaptive_thought || '');
+  const [forArguments, setForArguments] = useState(initialData?.arguments_for_initial || '');
+  const [againstArguments, setAgainstArguments] = useState(initialData?.arguments_against_initial || '');
+  const [spotType, setSpotType] = useState<string>(initialData?.spot_type || '');
+  const [positionDynamic, setPositionDynamic] = useState<string>(initialData?.position_dynamic || '');
+  const [tags, setTags] = useState<string[]>(initialData?.tags || []);
+  const [priorityLevel, setPriorityLevel] = useState<'high' | 'medium' | 'low' | undefined>(initialData?.priority_level);
+  const [theoryAttachments, setTheoryAttachments] = useState<Array<{ id: string; image: string; caption: string }>>(
+    (initialData?.theory_attachments || []).map((img, idx) => ({
+      id: `${Date.now()}-${idx}`,
+      image: img,
+      caption: ''
+    }))
+  );
+  const [wizardDrillScript, setWizardDrillScript] = useState(initialData?.wizard_drill_script || '');
   
   // Track which section is focused
   const [focusedSection, setFocusedSection] = useState<'handScreenshot' | 'theoryAttachments' | null>(null);
