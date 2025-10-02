@@ -192,10 +192,7 @@ export const updateHandNote = async (
 
 export const deleteHandNote = async (id: string, hard: boolean = false): Promise<void> => {
   if (hard) {
-    const { error } = await supabase
-      .from('hand_notes')
-      .delete()
-      .eq('id', id);
+    const { error } = await supabase.rpc('delete_hand_note', { note_id: id });
 
     if (error) {
       console.error('Delete error:', error);
