@@ -9,6 +9,7 @@ import ImageAnalysis from './pages/ImageAnalysis';
 import Analysis from './pages/Analysis';
 import AnalysisCreate from './pages/AnalysisCreate';
 import AnalysisView from './pages/AnalysisView';
+import AnalysisEdit from './pages/AnalysisEdit';
 import KnowledgeBase from './pages/KnowledgeBase';
 import Settings from './pages/Settings';
 import Training from './pages/Training';
@@ -36,6 +37,7 @@ function App() {
           <Route path="analysis" element={<Analysis />} />
           <Route path="analysis/create" element={<AnalysisCreate />} />
           <Route path="analysis/:id" element={<AnalysisView />} />
+          <Route path="analysis/:id/edit" element={<AnalysisEdit />} />
           <Route path="knowledge" element={<KnowledgeBase />} />
           <Route path="settings" element={<Settings />} />
           <Route path="training" element={<Training />} />
