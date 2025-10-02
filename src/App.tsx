@@ -8,6 +8,7 @@ import ProgressTracker from './pages/ProgressTracker';
 import ImageAnalysis from './pages/ImageAnalysis';
 import Analysis from './pages/Analysis';
 import AnalysisCreate from './pages/AnalysisCreate';
+import AnalysisView from './pages/AnalysisView';
 import KnowledgeBase from './pages/KnowledgeBase';
 import Settings from './pages/Settings';
 import Training from './pages/Training';
@@ -34,6 +35,7 @@ function App() {
           <Route path="image-analysis" element={<ImageAnalysis />} />
           <Route path="analysis" element={<Analysis />} />
           <Route path="analysis/create" element={<AnalysisCreate />} />
+          <Route path="analysis/:id" element={<AnalysisView />} />
           <Route path="knowledge" element={<KnowledgeBase />} />
           <Route path="settings" element={<Settings />} />
           <Route path="training" element={<Training />} />
