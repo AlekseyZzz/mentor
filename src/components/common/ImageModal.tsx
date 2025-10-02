@@ -7,12 +7,14 @@ interface NotePanel {
   content: string;
   color: string;
   position: { x: number; y: number };
+  size?: { width: number; height: number };
 }
 
 export interface ScreenshotNote {
   id: string;
   content: string;
   position?: { x: number; y: number };
+  size?: { width: number; height: number };
 }
 
 interface ImageModalProps {
@@ -62,7 +64,8 @@ const ImageModal: React.FC<ImageModalProps> = ({
         id: '1',
         content: '',
         color: HEADER_COLORS[0],
-        position: { x: window.innerWidth - 420, y: 100 }
+        position: { x: window.innerWidth - 420, y: 100 },
+        size: { width: 350, height: 300 }
       }]);
     } else {
       const panels = notes.map((note, index) => ({
@@ -72,7 +75,8 @@ const ImageModal: React.FC<ImageModalProps> = ({
         position: note.position || {
           x: window.innerWidth - 420 - (index * 30),
           y: 100 + (index * 30)
-        }
+        },
+        size: note.size || { width: 350, height: 300 }
       }));
       setNotePanels(panels);
     }
@@ -88,7 +92,8 @@ const ImageModal: React.FC<ImageModalProps> = ({
       position: {
         x: Math.max(50, Math.min(window.innerWidth - 400, Math.random() * (window.innerWidth - 400))),
         y: Math.max(50, Math.min(window.innerHeight - 350, Math.random() * (window.innerHeight - 350)))
-      }
+      },
+      size: { width: 350, height: 300 }
     };
     setNotePanels([...notePanels, newPanel]);
   };
@@ -101,7 +106,8 @@ const ImageModal: React.FC<ImageModalProps> = ({
         onNotesUpdate([{
           id: clearedPanel.id,
           content: '',
-          position: clearedPanel.position
+          position: clearedPanel.position,
+          size: clearedPanel.size
         }]);
       }
     } else {
@@ -111,7 +117,8 @@ const ImageModal: React.FC<ImageModalProps> = ({
         const updatedNotes = updatedPanels.map(p => ({
           id: p.id,
           content: p.content,
-          position: p.position
+          position: p.position,
+          size: p.size
         }));
         onNotesUpdate(updatedNotes);
       }
@@ -128,7 +135,25 @@ const ImageModal: React.FC<ImageModalProps> = ({
       const updatedNotes = updatedPanels.map(p => ({
         id: p.id,
         content: p.content,
-        position: p.position
+        position: p.position,
+        size: p.size
+      }));
+      onNotesUpdate(updatedNotes);
+    }
+  };
+
+  const handlePositionChange = (id: string, position: { x: number; y: number }, size: { width: number; height: number }) => {
+    const updatedPanels = notePanels.map(panel =>
+      panel.id === id ? { ...panel, position, size } : panel
+    );
+    setNotePanels(updatedPanels);
+
+    if (onNotesUpdate) {
+      const updatedNotes = updatedPanels.map(p => ({
+        id: p.id,
+        content: p.content,
+        position: p.position,
+        size: p.size
       }));
       onNotesUpdate(updatedNotes);
     }
@@ -255,6 +280,8 @@ const ImageModal: React.FC<ImageModalProps> = ({
         onAddNote={canEdit ? handleAddNote : undefined}
         headerColor={panel.color}
         initialPosition={panel.position}
+        initialSize={panel.size}
+        onPositionChange={(position, size) => handlePositionChange(panel.id, position, size)}
       />
     ))}
   </>

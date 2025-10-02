@@ -6,7 +6,7 @@ import { TILT_TYPES, GAME_STATES } from '../lib/constants/analysisТags';
 import TagSelector from '../components/common/TagSelector';
 import ImageModal, { ScreenshotNote } from '../components/common/ImageModal';
 import ScreenshotNoteModal from '../components/common/ScreenshotNoteModal';
-import { getScreenshotNotesByHandId, createScreenshotNote, updateScreenshotNote as updateScreenshotNoteApi, deleteScreenshotNote } from '../lib/api/screenshotNotes';
+import { getScreenshotNotesByHandId, createScreenshotNote, updateScreenshotNote as updateScreenshotNoteApi, deleteScreenshotNote, updateScreenshotNotePosition } from '../lib/api/screenshotNotes';
 
 const AnalysisEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -78,7 +78,13 @@ const AnalysisEdit: React.FC = () => {
         existing.push({
           id: note.id,
           content: note.note,
-          dbId: note.id
+          dbId: note.id,
+          position: note.panel_x !== null && note.panel_y !== null
+            ? { x: note.panel_x, y: note.panel_y }
+            : undefined,
+          size: note.panel_width !== null && note.panel_height !== null
+            ? { width: note.panel_width, height: note.panel_height }
+            : undefined
         });
         notesMap.set(note.screenshot_url, existing);
       });
@@ -204,6 +210,11 @@ const AnalysisEdit: React.FC = () => {
 
           if (note.content && note.content.trim().length > 0) {
             await updateScreenshotNoteApi(existingNote.dbId, note.content);
+
+            if (note.position && note.size) {
+              await updateScreenshotNotePosition(existingNote.dbId, note.position, note.size);
+            }
+
             updatedNotes.push({
               ...note,
               dbId: existingNote.dbId

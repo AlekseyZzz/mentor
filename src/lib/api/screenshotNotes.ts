@@ -10,6 +10,10 @@ export interface ScreenshotNote {
   user_id: string;
   created_at: string;
   updated_at: string;
+  panel_x?: number | null;
+  panel_y?: number | null;
+  panel_width?: number | null;
+  panel_height?: number | null;
 }
 
 export interface CreateScreenshotNoteData {
@@ -18,6 +22,10 @@ export interface CreateScreenshotNoteData {
   note: string;
   screenshot_type: 'hand' | 'wizard';
   display_order: number;
+  panel_x?: number;
+  panel_y?: number;
+  panel_width?: number;
+  panel_height?: number;
 }
 
 export async function getScreenshotNotesByHandId(handNoteId: string): Promise<ScreenshotNote[]> {
@@ -58,6 +66,25 @@ export async function updateScreenshotNote(id: string, note: string): Promise<Sc
 
   if (error) throw error;
   return data;
+}
+
+export async function updateScreenshotNotePosition(
+  id: string,
+  position: { x: number; y: number },
+  size: { width: number; height: number }
+): Promise<void> {
+  const { error } = await supabase
+    .from('screenshot_notes')
+    .update({
+      panel_x: position.x,
+      panel_y: position.y,
+      panel_width: size.width,
+      panel_height: size.height,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id);
+
+  if (error) throw error;
 }
 
 export async function deleteScreenshotNote(id: string): Promise<void> {

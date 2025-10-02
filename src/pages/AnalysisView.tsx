@@ -37,7 +37,13 @@ const AnalysisView: React.FC = () => {
         const existing = notesMap.get(note.screenshot_url) || [];
         existing.push({
           id: note.id,
-          content: note.note
+          content: note.note,
+          position: note.panel_x !== null && note.panel_y !== null
+            ? { x: note.panel_x, y: note.panel_y }
+            : undefined,
+          size: note.panel_width !== null && note.panel_height !== null
+            ? { width: note.panel_width, height: note.panel_height }
+            : undefined
         });
         notesMap.set(note.screenshot_url, existing);
       });

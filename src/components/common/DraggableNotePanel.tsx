@@ -9,6 +9,8 @@ interface DraggableNotePanelProps {
   onAddNote?: () => void;
   headerColor?: string;
   initialPosition?: { x: number; y: number };
+  initialSize?: { width: number; height: number };
+  onPositionChange?: (position: { x: number; y: number }, size: { width: number; height: number }) => void;
 }
 
 const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({
@@ -18,11 +20,13 @@ const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({
   onDelete,
   onAddNote,
   headerColor = 'from-blue-500 to-blue-600',
-  initialPosition
+  initialPosition,
+  initialSize,
+  onPositionChange
 }) => {
   const [editedNote, setEditedNote] = useState(note);
   const [position, setPosition] = useState(initialPosition || { x: window.innerWidth - 420, y: 100 });
-  const [size, setSize] = useState({ width: 350, height: 300 });
+  const [size, setSize] = useState(initialSize || { width: 350, height: 300 });
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -99,6 +103,10 @@ const DraggableNotePanel: React.FC<DraggableNotePanelProps> = ({
         e.stopPropagation();
         setIsDragging(false);
         setIsResizing(false);
+
+        if (onPositionChange) {
+          onPositionChange(position, size);
+        }
       }
     };
 

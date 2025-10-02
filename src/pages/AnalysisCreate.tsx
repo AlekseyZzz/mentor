@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Upload, Plus, X, Clipboard } from 'lucide-react';
 import { createHandNote, uploadHandScreenshot, CreateHandNoteData } from '../lib/api/handNotes';
-import { createScreenshotNote } from '../lib/api/screenshotNotes';
+import { createScreenshotNote, updateScreenshotNotePosition } from '../lib/api/screenshotNotes';
 import { TILT_TYPES, GAME_STATES } from '../lib/constants/analysisТags';
 import TagSelector from '../components/common/TagSelector';
 import ImageModal, { ScreenshotNote } from '../components/common/ImageModal';
@@ -229,7 +229,11 @@ const AnalysisCreate: React.FC = () => {
               screenshot_url: screenshot.url,
               note: note.content,
               screenshot_type: screenshot.type,
-              display_order: screenshot.order * 100 + i
+              display_order: screenshot.order * 100 + i,
+              panel_x: note.position?.x,
+              panel_y: note.position?.y,
+              panel_width: note.size?.width,
+              panel_height: note.size?.height
             });
           }
         }
