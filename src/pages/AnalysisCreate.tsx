@@ -21,6 +21,7 @@ const AnalysisCreate: React.FC = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const [wizardLink, setWizardLink] = useState('');
+  const [wizardDrillScript, setWizardDrillScript] = useState('');
   const [wizardScreenshots, setWizardScreenshots] = useState<string[]>([]);
   const [correctSolution, setCorrectSolution] = useState('');
   const [argumentsAgainst, setArgumentsAgainst] = useState<string[]>(['']);
@@ -193,6 +194,7 @@ const AnalysisCreate: React.FC = () => {
         },
         back: {
           wizard_link: wizardLink || null,
+          wizard_drill_script: wizardDrillScript || null,
           wizard_screenshots: wizardScreenshots,
           correct_solution: correctSolution,
           arguments_against: argumentsAgainst.filter(arg => arg.trim().length > 0),
@@ -456,6 +458,19 @@ const AnalysisCreate: React.FC = () => {
               onChange={(e) => setWizardLink(e.target.value)}
               placeholder="https://app.gtowizard.com/..."
               className="w-full p-2 border border-gray-300 rounded-lg"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              GTO Wizard Drill Script
+            </label>
+            <textarea
+              value={wizardDrillScript}
+              onChange={(e) => setWizardDrillScript(e.target.value)}
+              placeholder="Paste GTO Wizard drill script here..."
+              rows={4}
+              className="w-full p-3 border border-gray-300 rounded-lg font-mono text-sm"
             />
           </div>
 

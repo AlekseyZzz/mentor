@@ -281,6 +281,22 @@ const AnalysisView: React.FC = () => {
                 </div>
               )}
 
+              {hand.back.wizard_drill_script && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3">GTO Wizard Drill Script</h3>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(hand.back.wizard_drill_script);
+                      alert('Drill script copied to clipboard!');
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition-colors"
+                  >
+                    <Copy size={16} />
+                    Copy Drill Script
+                  </button>
+                </div>
+              )}
+
               {hand.back.wizard_screenshots.length > 0 && (
                 <div>
                   <h3 className="text-sm font-semibold text-gray-700 mb-3">Wizard Screenshots</h3>

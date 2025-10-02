@@ -18,6 +18,7 @@ export interface HandNoteFront {
 
 export interface HandNoteBack {
   wizard_link?: string | null;
+  wizard_drill_script?: string | null;
   wizard_screenshots: string[];
   correct_solution: string;
   arguments_against: string[];

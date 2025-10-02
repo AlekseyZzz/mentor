@@ -14,6 +14,7 @@ export interface HandData {
   tags: string[];
   priority_level?: 'high' | 'medium' | 'low';
   theory_attachments: string[];
+  wizard_drill_script?: string;
 }
 
 interface HandAnalysisProps {
@@ -35,6 +36,7 @@ const HandAnalysis: React.FC<HandAnalysisProps> = ({ index, expanded, onToggle, 
   const [tags, setTags] = useState<string[]>([]);
   const [priorityLevel, setPriorityLevel] = useState<'high' | 'medium' | 'low' | undefined>();
   const [theoryAttachments, setTheoryAttachments] = useState<Array<{ id: string; image: string; caption: string }>>([]);
+  const [wizardDrillScript, setWizardDrillScript] = useState('');
   
   // Track which section is focused
   const [focusedSection, setFocusedSection] = useState<'handScreenshot' | 'theoryAttachments' | null>(null);
@@ -162,11 +164,12 @@ const HandAnalysis: React.FC<HandAnalysisProps> = ({ index, expanded, onToggle, 
         position_dynamic: positionDynamic || undefined,
         tags: tags,
         priority_level: priorityLevel,
-        theory_attachments: theoryAttachments.map(att => att.image)
+        theory_attachments: theoryAttachments.map(att => att.image),
+        wizard_drill_script: wizardDrillScript || undefined
       };
       onChange(handData);
     }
-  }, [handScreenshot, handDescription, initialThought, adaptiveThought, forArguments, againstArguments, spotType, positionDynamic, tags, priorityLevel, theoryAttachments, onChange]);
+  }, [handScreenshot, handDescription, initialThought, adaptiveThought, forArguments, againstArguments, spotType, positionDynamic, tags, priorityLevel, theoryAttachments, wizardDrillScript, onChange]);
 
   React.useEffect(() => {
     const handleFocus = (event: FocusEvent) => {
@@ -392,6 +395,19 @@ const HandAnalysis: React.FC<HandAnalysisProps> = ({ index, expanded, onToggle, 
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              GTO Wizard Drill Script
+            </label>
+            <textarea
+              value={wizardDrillScript}
+              onChange={(e) => setWizardDrillScript(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+              rows={4}
+              placeholder="Paste GTO Wizard drill script here..."
+            />
           </div>
 
           <div className="mb-4">

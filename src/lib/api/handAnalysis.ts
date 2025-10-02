@@ -17,6 +17,7 @@ export interface HandAnalysis {
     image_url: string;
     caption: string;
   }>;
+  wizard_drill_script?: string;
 }
 
 export const createHandAnalysis = async (sessionId: string, hands: Omit<HandAnalysis, 'id' | 'session_id'>[]) => {
@@ -64,7 +65,8 @@ export const updateHandAnalysis = async (handId: string, hand: any) => {
       position_dynamic: hand.positionDynamic,
       tags: hand.tags,
       priority_level: hand.priorityLevel,
-      theory_attachments: hand.theoryAttachments
+      theory_attachments: hand.theoryAttachments,
+      wizard_drill_script: hand.wizardDrillScript
     })
     .eq('id', handId)
     .select()
