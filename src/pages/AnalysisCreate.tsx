@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Upload, Plus, X, Clipboard } from 'lucide-react';
 import { createHandNote, uploadHandScreenshot, CreateHandNoteData } from '../lib/api/handNotes';
-import { ALL_TAGS, TILT_TYPES, GAME_STATES } from '../lib/constants/analysisТags';
+import { TILT_TYPES, GAME_STATES } from '../lib/constants/analysisТags';
+import TagSelector from '../components/common/TagSelector';
 
 const AnalysisCreate: React.FC = () => {
   const navigate = useNavigate();
@@ -104,11 +105,6 @@ const AnalysisCreate: React.FC = () => {
     }
   };
 
-  const handleTagToggle = (tag: string) => {
-    setSelectedTags(prev =>
-      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
-    );
-  };
 
   const addArgument = (type: 'for' | 'against') => {
     if (type === 'for') {
@@ -350,21 +346,7 @@ const AnalysisCreate: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Tags
             </label>
-            <div className="flex flex-wrap gap-2">
-              {ALL_TAGS.map(tag => (
-                <button
-                  key={tag}
-                  onClick={() => handleTagToggle(tag)}
-                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                    selectedTags.includes(tag)
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
+            <TagSelector selectedTags={selectedTags} onChange={setSelectedTags} />
           </div>
 
           <div className="flex justify-end">
