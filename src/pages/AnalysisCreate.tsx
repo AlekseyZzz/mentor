@@ -4,6 +4,7 @@ import { ArrowLeft, Upload, Plus, X, Clipboard } from 'lucide-react';
 import { createHandNote, uploadHandScreenshot, CreateHandNoteData } from '../lib/api/handNotes';
 import { TILT_TYPES, GAME_STATES } from '../lib/constants/analysisТags';
 import TagSelector from '../components/common/TagSelector';
+import ImageModal from '../components/common/ImageModal';
 
 const AnalysisCreate: React.FC = () => {
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ const AnalysisCreate: React.FC = () => {
   const [gameState, setGameState] = useState<string>('');
   const [adaptiveThought, setAdaptiveThought] = useState('');
   const [nextTimePlan, setNextTimePlan] = useState('');
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [markForReview, setMarkForReview] = useState(false);
 
   useEffect(() => {
@@ -271,7 +273,12 @@ const AnalysisCreate: React.FC = () => {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-3">
               {screenshots.map((url, idx) => (
                 <div key={idx} className="relative group">
-                  <img src={url} alt={`Screenshot ${idx + 1}`} className="w-full h-32 object-cover rounded-lg" />
+                  <img
+                    src={url}
+                    alt={`Screenshot ${idx + 1}`}
+                    className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => setSelectedImage(url)}
+                  />
                   <button
                     onClick={() => removeScreenshot(idx, 'hand')}
                     className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
@@ -398,7 +405,12 @@ const AnalysisCreate: React.FC = () => {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-3">
               {wizardScreenshots.map((url, idx) => (
                 <div key={idx} className="relative group">
-                  <img src={url} alt={`Wizard ${idx + 1}`} className="w-full h-32 object-cover rounded-lg" />
+                  <img
+                    src={url}
+                    alt={`Wizard ${idx + 1}`}
+                    className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => setSelectedImage(url)}
+                  />
                   <button
                     onClick={() => removeScreenshot(idx, 'wizard')}
                     className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
@@ -603,6 +615,13 @@ const AnalysisCreate: React.FC = () => {
             </button>
           </div>
         </div>
+      )}
+
+      {selectedImage && (
+        <ImageModal
+          imageUrl={selectedImage}
+          onClose={() => setSelectedImage(null)}
+        />
       )}
     </div>
   );

@@ -4,6 +4,7 @@ import { ArrowLeft, Upload, Plus, X, Clipboard } from 'lucide-react';
 import { getHandNoteById, updateHandNote, uploadHandScreenshot, UpdateHandNoteData } from '../lib/api/handNotes';
 import { TILT_TYPES, GAME_STATES } from '../lib/constants/analysisТags';
 import TagSelector from '../components/common/TagSelector';
+import ImageModal from '../components/common/ImageModal';
 
 const AnalysisEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +24,7 @@ const AnalysisEdit: React.FC = () => {
   const [wizardScreenshots, setWizardScreenshots] = useState<string[]>([]);
   const [correctSolution, setCorrectSolution] = useState('');
   const [argumentsAgainst, setArgumentsAgainst] = useState<string[]>(['']);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [focus, setFocus] = useState<number | undefined>(undefined);
   const [confidence, setConfidence] = useState<number | undefined>(undefined);
   const [impulsivity, setImpulsivity] = useState<number | undefined>(undefined);
@@ -320,7 +322,12 @@ const AnalysisEdit: React.FC = () => {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-3">
               {screenshots.map((url, idx) => (
                 <div key={idx} className="relative group">
-                  <img src={url} alt={`Screenshot ${idx + 1}`} className="w-full h-32 object-cover rounded-lg" />
+                  <img
+                    src={url}
+                    alt={`Screenshot ${idx + 1}`}
+                    className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => setSelectedImage(url)}
+                  />
                   <button
                     onClick={() => removeScreenshot(idx, 'hand')}
                     className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
@@ -447,7 +454,12 @@ const AnalysisEdit: React.FC = () => {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-3">
               {wizardScreenshots.map((url, idx) => (
                 <div key={idx} className="relative group">
-                  <img src={url} alt={`Wizard ${idx + 1}`} className="w-full h-32 object-cover rounded-lg" />
+                  <img
+                    src={url}
+                    alt={`Wizard ${idx + 1}`}
+                    className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => setSelectedImage(url)}
+                  />
                   <button
                     onClick={() => removeScreenshot(idx, 'wizard')}
                     className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
@@ -652,6 +664,13 @@ const AnalysisEdit: React.FC = () => {
             </button>
           </div>
         </div>
+      )}
+
+      {selectedImage && (
+        <ImageModal
+          imageUrl={selectedImage}
+          onClose={() => setSelectedImage(null)}
+        />
       )}
     </div>
   );

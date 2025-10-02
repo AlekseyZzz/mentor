@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, CreditCard as Edit2, Trash2, Copy, ExternalLink } from 'lucide-react';
 import { getHandNoteById, deleteHandNote, duplicateHandNote, HandNote } from '../lib/api/handNotes';
+import ImageModal from '../components/common/ImageModal';
 
 const AnalysisView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -10,6 +11,7 @@ const AnalysisView: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showFront, setShowFront] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -160,19 +162,17 @@ const AnalysisView: React.FC = () => {
                   <h3 className="text-sm font-semibold text-gray-700 mb-3">Screenshots</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {hand.front.screenshot_urls.map((url, idx) => (
-                      <a
+                      <button
                         key={idx}
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block rounded-lg overflow-hidden border border-gray-200 hover:border-blue-500 transition-colors"
+                        onClick={() => setSelectedImage(url)}
+                        className="block rounded-lg overflow-hidden border border-gray-200 hover:border-blue-500 transition-colors cursor-pointer"
                       >
                         <img
                           src={url}
                           alt={`Screenshot ${idx + 1}`}
                           className="w-full h-64 object-cover"
                         />
-                      </a>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -260,19 +260,17 @@ const AnalysisView: React.FC = () => {
                   <h3 className="text-sm font-semibold text-gray-700 mb-3">Wizard Screenshots</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {hand.back.wizard_screenshots.map((url, idx) => (
-                      <a
+                      <button
                         key={idx}
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block rounded-lg overflow-hidden border border-gray-200 hover:border-blue-500 transition-colors"
+                        onClick={() => setSelectedImage(url)}
+                        className="block rounded-lg overflow-hidden border border-gray-200 hover:border-blue-500 transition-colors cursor-pointer"
                       >
                         <img
                           src={url}
                           alt={`Wizard ${idx + 1}`}
                           className="w-full h-64 object-cover"
                         />
-                      </a>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -384,6 +382,13 @@ const AnalysisView: React.FC = () => {
           )}
         </div>
       </div>
+
+      {selectedImage && (
+        <ImageModal
+          imageUrl={selectedImage}
+          onClose={() => setSelectedImage(null)}
+        />
+      )}
     </div>
   );
 };
