@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { Tag, Brain, AlertTriangle, ChevronDown, ChevronUp, Image as ImageIcon, X } from 'lucide-react';
+import { Tag, Brain, AlertTriangle, ChevronDown, ChevronUp, Image as ImageIcon, X, Copy, Check } from 'lucide-react';
 import Select from 'react-select';
 
 export interface HandData {
@@ -26,6 +26,8 @@ interface HandAnalysisProps {
 const HandAnalysis: React.FC<HandAnalysisProps> = ({ index, expanded, onToggle, onChange }) => {
   const [handScreenshot, setHandScreenshot] = useState<string | null>(null);
   const [handDescription, setHandDescription] = useState('');
+  const [gtoWizardScript, setGtoWizardScript] = useState('');
+  const [isCopied, setIsCopied] = useState(false);
   const [initialThought, setInitialThought] = useState('');
   const [adaptiveThought, setAdaptiveThought] = useState('');
   const [forArguments, setForArguments] = useState('');
@@ -35,10 +37,10 @@ const HandAnalysis: React.FC<HandAnalysisProps> = ({ index, expanded, onToggle, 
   const [tags, setTags] = useState<string[]>([]);
   const [priorityLevel, setPriorityLevel] = useState<'high' | 'medium' | 'low' | undefined>();
   const [theoryAttachments, setTheoryAttachments] = useState<Array<{ id: string; image: string; caption: string }>>([]);
-  
+
   // Track which section is focused
   const [focusedSection, setFocusedSection] = useState<'handScreenshot' | 'theoryAttachments' | null>(null);
-  
+
   // Refs for the drop zones
   const handScreenshotRef = useRef<HTMLDivElement>(null);
   const theoryAttachmentsRef = useRef<HTMLDivElement>(null);
@@ -147,6 +149,16 @@ const HandAnalysis: React.FC<HandAnalysisProps> = ({ index, expanded, onToggle, 
 
   const removeTheoryAttachment = (id: string) => {
     setTheoryAttachments(prev => prev.filter(attachment => attachment.id !== id));
+  };
+
+  const handleCopyScript = async () => {
+    try {
+      await navigator.clipboard.writeText(gtoWizardScript);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
   };
 
   React.useEffect(() => {
@@ -267,6 +279,42 @@ const HandAnalysis: React.FC<HandAnalysisProps> = ({ index, expanded, onToggle, 
               rows={2}
               placeholder="Describe what happened in the hand (positions, board, actions)"
             />
+          </div>
+
+          {/* GTO Wizard Script */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              GTO Wizard Drill Script
+            </label>
+            <div className="relative">
+              <textarea
+                value={gtoWizardScript}
+                onChange={(e) => setGtoWizardScript(e.target.value)}
+                className="w-full p-3 pr-12 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                rows={6}
+                placeholder="Paste your GTO Wizard drill script here..."
+              />
+              <button
+                type="button"
+                onClick={handleCopyScript}
+                disabled={!gtoWizardScript}
+                className={`absolute top-2 right-2 p-2 rounded-md transition-colors ${
+                  gtoWizardScript
+                    ? 'hover:bg-gray-100 text-gray-700'
+                    : 'text-gray-300 cursor-not-allowed'
+                }`}
+                title="Copy script"
+              >
+                {isCopied ? (
+                  <Check size={20} className="text-green-600" />
+                ) : (
+                  <Copy size={20} />
+                )}
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              This script can be imported directly into GTO Wizard for drill practice
+            </p>
           </div>
 
           {/* Initial Thought */}
